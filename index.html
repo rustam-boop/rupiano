@@ -207,6 +207,22 @@
           <span id="timbreText" class="hidden md:inline">Рояль</span>
         </button>
 
+        <!-- Studio Tools: MIDI, Chords Warmup, Recorder -->
+        <button id="btnChordsTrainer" class="h-9 px-2.5 rounded-xl bg-slate-900 border border-slate-800 text-emerald-300 hover:text-emerald-200 flex items-center gap-1.5 text-xs font-semibold transition" title="Тренажер аккордов и гамм">
+          <i class="fa-solid fa-layer-group text-xs"></i>
+          <span class="hidden xl:inline">Аккорды</span>
+        </button>
+
+        <button id="btnRecordToggle" class="h-9 px-2.5 rounded-xl bg-slate-900 border border-slate-800 text-rose-400 hover:text-rose-300 flex items-center gap-1.5 text-xs font-semibold transition" title="Запись своего исполнения (REC)">
+          <span id="recDot" class="w-2 h-2 rounded-full bg-rose-500"></span>
+          <span id="recText" class="hidden xl:inline">REC</span>
+        </button>
+
+        <div id="midiBadge" class="hidden md:flex items-center gap-1.5 px-2.5 h-9 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-semibold text-slate-400" title="Статус подключения реальной MIDI-клавиатуры">
+          <i class="fa-solid fa-plug text-xs"></i>
+          <span id="midiStatusText">MIDI</span>
+        </div>
+
         <!-- Library button for mobile -->
         <button id="btnMobileSongs" class="sm:hidden h-9 w-9 rounded-xl bg-violet-600/30 text-violet-300 border border-violet-500/40 flex items-center justify-center">
           <i class="fa-solid fa-book-open text-xs"></i>
@@ -216,9 +232,9 @@
     </div>
   </header>
 
-  <!-- SECONDARY HUD BAR: Realtime Stats, A-B Loop & Guidance -->
+  <!-- SECONDARY HUD BAR: Realtime Stats, Hands Mode, Sight-Reading, A-B Loop -->
   <div class="flex-none bg-slate-900/60 border-b border-slate-800/60 px-3 sm:px-4 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2 text-slate-400">
-    <div class="flex items-center gap-3 sm:gap-4">
+    <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
       <div class="flex items-center gap-1.5">
         <span class="text-slate-500">След.:</span>
         <span id="hintNextNote" class="font-bold text-violet-400 text-sm tracking-wide font-mono">-</span>
@@ -228,11 +244,32 @@
         <span id="hintFinger" class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[11px] ring-1 ring-amber-500/40">-</span>
       </div>
 
-      <!-- Smart Loop & Auto-Speedup Controls -->
-      <div class="hidden sm:flex items-center gap-1.5 border-l border-slate-800 pl-3">
+      <!-- Hand Practice Selector (Both / Right / Left + AI Partner) -->
+      <div class="flex items-center bg-slate-950/70 rounded-lg p-0.5 border border-slate-800">
+        <button data-hand="both" class="hand-btn px-2 py-0.5 rounded text-[11px] font-semibold bg-violet-600 text-white transition" title="Обе руки">Обе</button>
+        <button data-hand="right" class="hand-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white transition" title="Только правая рука (левую играет ИИ-аккомпаниатор)">Прав. (ИИ-акк.)</button>
+        <button data-hand="left" class="hand-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white transition" title="Только левая рука (правую играет ИИ)">Лев.</button>
+      </div>
+
+      <!-- Sight Reading Sheet Music Toggle -->
+      <button id="btnSheetMusicToggle" class="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 text-[11px] font-medium flex items-center gap-1 transition" title="Показать классический нотный стан">
+        <i class="fa-solid fa-staff-snake text-[10px]"></i>
+        <span>Ноты</span>
+      </button>
+
+      <!-- Blind Memory Mode -->
+      <button id="btnBlindMemoryToggle" class="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-fuchsia-300 text-[11px] font-medium flex items-center gap-1 transition" title="Режим слепой памяти: подсказки постепенно исчезают">
+        <i class="fa-solid fa-eye-slash text-[10px]"></i>
+        <span id="blindMemoryText">Память</span>
+      </button>
+
+      <!-- A-B Looper & Auto-Speedup Controls -->
+      <div class="hidden md:flex items-center gap-1.5 border-l border-slate-800 pl-2">
+        <button id="btnSetLoopA" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-mono font-bold transition" title="Установить начало A-B петли">A</button>
+        <button id="btnSetLoopB" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-mono font-bold transition" title="Установить конец A-B петли">B</button>
         <button id="btnLoopToggle" class="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium flex items-center gap-1 transition" title="Зациклить сложный фрагмент">
           <i class="fa-solid fa-repeat text-[10px]"></i>
-          <span id="loopStatusText">Повтор: Выкл</span>
+          <span id="loopStatusText">Повтор</span>
         </button>
         <button id="btnAutoSpeedToggle" class="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium flex items-center gap-1 transition" title="Авто-ускорение темпа на +5% при успешном круге">
           <i class="fa-solid fa-gauge-high text-[10px]"></i>
@@ -261,6 +298,12 @@
         <span id="progressStep">0 / 0</span>
       </div>
     </div>
+  </div>
+
+  <!-- INTERACTIVE CLASSICAL SHEET MUSIC STAFF (SIGHT-READING BAR) -->
+  <div id="sheetMusicPanel" class="hidden flex-none bg-slate-900/95 border-b border-slate-800 px-4 py-1.5 flex items-center justify-center relative">
+    <canvas id="sheetMusicCanvas" class="w-full max-w-3xl h-20 block"></canvas>
+    <span class="absolute top-1.5 right-3 text-[10px] uppercase tracking-wider font-semibold text-sky-400/80">Чтение с листа (Скрипичный / Басовый ключ)</span>
   </div>
 
   <!-- MAIN INTERACTIVE CANVAS (Synthesia-style Falling Notes + Particles + Visualizer) -->
@@ -323,9 +366,9 @@
       <div class="p-4 sm:p-6 border-b border-slate-800 flex items-center justify-between">
         <div>
           <h2 class="text-xl sm:text-2xl font-display font-bold text-white flex items-center gap-2.5">
-            <i class="fa-solid fa-book-bookmark text-violet-400"></i> Библиотека шедевров (21 мелодия)
+            <i class="fa-solid fa-book-bookmark text-violet-400"></i> Библиотека шедевров (22 мелодии)
           </h2>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">Легендарная классика и народные хиты с аппликатурой пальцев и умным обучением</p>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Легендарная классика, народные хиты и лирические композиции с аппликатурой пальцев</p>
         </div>
         <button id="btnCloseModal" class="w-10 h-10 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -399,6 +442,39 @@
     </div>
   </div>
 
+  <!-- CHORDS, SCALES & ARPEGGIOS WARMUP MODAL -->
+  <div id="chordsModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-emerald-500/40 rounded-3xl w-full max-w-lg p-6 shadow-2xl ring-1 ring-white/10">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div>
+          <h3 class="text-xl font-display font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-layer-group text-emerald-400"></i> Разминка: Аккорды и Гармония
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Зажмите все подсвеченные клавиши аккорда одновременно!</p>
+        </div>
+        <button id="btnCloseChords" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="my-5 text-center bg-slate-950/80 border border-slate-800 rounded-2xl p-5">
+        <div class="text-xs uppercase tracking-widest text-emerald-400 font-bold">Текущее задание</div>
+        <div id="targetChordName" class="text-3xl font-display font-extrabold text-white mt-1">До мажор (C Major)</div>
+        <div id="targetChordNotes" class="text-sm font-mono text-violet-300 mt-2">До (C4) — Ми (E4) — Соль (G4)</div>
+        <div id="chordChallengeFeedback" class="mt-3 text-xs font-bold text-amber-300">Сыграйте эти ноты на клавиатуре ниже</div>
+      </div>
+
+      <div class="flex gap-2 justify-between">
+        <button id="btnListenChord" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition">
+          <i class="fa-solid fa-volume-high mr-1.5 text-emerald-400"></i> Прослушать аккорд
+        </button>
+        <button id="btnNextChord" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">
+          Следующий аккорд <i class="fa-solid fa-arrow-right ml-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT APPLICATION LOGIC -->
   <script>
     /* =====================================================================
@@ -406,6 +482,290 @@
        ===================================================================== */
     // Note naming system: Pitch standard C3 to C6, durations in beats, finger: 1 (thumb) to 5 (pinky)
     const SONGS_DB = [
+      {
+        id: 'song_157_peace_at_last',
+        title: '157 — Наконец-то мир! (Peace at Last!)',
+        composer: 'Псалом 29:11 (Точная запись с нотного листа)',
+        difficulty: 'Medium',
+        defaultBpm: 84,
+        description: 'Полная нотная запись с листа: Куплет 1, Припев, Куплет 2, Припев, инструментальный бридж и двойной финал.',
+        notes: [
+          // === КУПЛЕТ 1 ===
+          // Затакт: В ти-хой (A3 B3)
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          // га-ва-ни Бог (C#4 E4 D4 C#4)
+          { pitch: 'C#4', duration: 1.0, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 5 },
+          { pitch: 'D4', duration: 0.5, finger: 4 },
+          { pitch: 'C#4', duration: 1.0, finger: 3 },
+          // У-крыл свой на-род, Хоть (B3 C#4 D4 E4 C#4 | A3)
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'D4', duration: 0.5, finger: 4 },
+          { pitch: 'E4', duration: 0.5, finger: 5 },
+          { pitch: 'C#4', duration: 1.5, finger: 3 },
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          // мо-ре, бу-шу-я, ре-вёт. (F#4 E4 F#4 G#4 A4 G#4 F#4 E4)
+          { pitch: 'F#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'F#4', duration: 0.5, finger: 2 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'F#4', duration: 0.5, finger: 2 },
+          { pitch: 'E4', duration: 2.0, finger: 1 },
+          // Здесь по-кой и мир, За- (A3 B3 C#4 E4 | B3)
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          { pitch: 'C#4', duration: 1.5, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 5 },
+          { pitch: 'C#4', duration: 1.0, finger: 3 },
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          // щи-та от тре-вог. Мы (B3 C#4 D4 E4 C#4 | A3)
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'D4', duration: 0.5, finger: 4 },
+          { pitch: 'E4', duration: 0.5, finger: 5 },
+          { pitch: 'C#4', duration: 1.5, finger: 3 },
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          // зна-ем, что бу-ря прой-дёт. (F#4 E4 F#4 G#4 A4 G#4 B4)
+          { pitch: 'F#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'F#4', duration: 0.5, finger: 2 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'B4', duration: 2.0, finger: 5 },
+
+          // === ПРИПЕВ 1 ===
+          // На-ко-нец бу-дет мир До кра-ёв зем-ли, По- (E4 D4 | C#4 E4 D4 C#4 A4 G#4 | F#4 E4 C#4 | A3)
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'A4', duration: 0.5, finger: 5 },
+          { pitch: 'G#4', duration: 0.5, finger: 4 },
+          { pitch: 'F#4', duration: 1.0, finger: 3 },
+          { pitch: 'E4', duration: 1.0, finger: 2 },
+          { pitch: 'C#4', duration: 1.5, finger: 1 },
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          // льёт-ся как ре-ка. От бес- (B3 C#4 D4 C#4 B3 | A3 | E4 D4)
+          { pitch: 'B3', duration: 1.5, finger: 2 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'D4', duration: 1.0, finger: 4 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          { pitch: 'A3', duration: 2.0, finger: 1 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          // край-них до-лин До кру-тых вер-шин — (C#4 E4 D4 C#4 A4 G#4 | B4 A4 G#4)
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'A4', duration: 0.5, finger: 4 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'B4', duration: 1.0, finger: 5 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'G#4', duration: 2.0, finger: 3 },
+          // Всю-ду ис-тин-ный мир На-ве-ка! (C#5 B4 A4 G#4 F#4 | E4 A4 G#4 | F#4)
+          { pitch: 'C#5', duration: 1.5, finger: 5 },
+          { pitch: 'B4', duration: 0.5, finger: 4 },
+          { pitch: 'A4', duration: 1.0, finger: 3 },
+          { pitch: 'G#4', duration: 0.5, finger: 2 },
+          { pitch: 'F#4', duration: 0.5, finger: 1 },
+          { pitch: 'E4', duration: 2.0, finger: 1 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'G#4', duration: 1.0, finger: 3 },
+          { pitch: 'F#4', duration: 4.0, finger: 2 },
+
+          // === КУПЛЕТ 2 ===
+          // Не-бе-са и зем-ля Слов-но се-мья. (A3 B3 | C#4 E4 D4 C#4 | B3 C#4 D4 E4 C#4)
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          { pitch: 'C#4', duration: 1.0, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 5 },
+          { pitch: 'D4', duration: 0.5, finger: 4 },
+          { pitch: 'C#4', duration: 1.5, finger: 3 },
+          { pitch: 'B3', duration: 1.0, finger: 2 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'D4', duration: 0.5, finger: 4 },
+          { pitch: 'E4', duration: 0.5, finger: 5 },
+          { pitch: 'C#4', duration: 1.5, finger: 3 },
+          // В гар-мо-ни-и все бу-дем жить, (A3 | F#4 E4 F#4 G#4 A4 G#4 F#4 E4)
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          { pitch: 'F#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'F#4', duration: 0.5, finger: 2 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'F#4', duration: 0.5, finger: 2 },
+          { pitch: 'E4', duration: 2.0, finger: 1 },
+          // Не-бы-ва-лый мир На серд-це о-щу-тим. (A3 B3 | C#4 E4 D4 | C#4 | B3 C#4 D4 E4 C#4)
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          { pitch: 'C#4', duration: 1.5, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 5 },
+          { pitch: 'D4', duration: 1.5, finger: 4 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'D4', duration: 0.5, finger: 4 },
+          { pitch: 'E4', duration: 0.5, finger: 5 },
+          { pitch: 'C#4', duration: 1.5, finger: 3 },
+          // Лю-бовь бу-дет всю-ду ца-рить! (A3 | F#4 E4 F#4 G#4 A4 G#4 B4)
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          { pitch: 'F#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'F#4', duration: 0.5, finger: 2 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'B4', duration: 2.0, finger: 5 },
+
+          // === ПРИПЕВ 2 ===
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'A4', duration: 0.5, finger: 5 },
+          { pitch: 'G#4', duration: 0.5, finger: 4 },
+          { pitch: 'F#4', duration: 1.0, finger: 3 },
+          { pitch: 'E4', duration: 1.0, finger: 2 },
+          { pitch: 'C#4', duration: 1.5, finger: 1 },
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          { pitch: 'B3', duration: 1.5, finger: 2 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'D4', duration: 1.0, finger: 4 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          { pitch: 'A3', duration: 2.0, finger: 1 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'A4', duration: 0.5, finger: 4 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'B4', duration: 1.0, finger: 5 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'G#4', duration: 2.0, finger: 3 },
+          { pitch: 'C#5', duration: 1.5, finger: 5 },
+          { pitch: 'B4', duration: 0.5, finger: 4 },
+          { pitch: 'A4', duration: 1.0, finger: 3 },
+          { pitch: 'G#4', duration: 0.5, finger: 2 },
+          { pitch: 'F#4', duration: 0.5, finger: 1 },
+          { pitch: 'E4', duration: 2.0, finger: 1 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'G#4', duration: 1.0, finger: 3 },
+          { pitch: 'F#4', duration: 4.0, finger: 2 },
+
+          // === ИНСТРУМЕНТАЛЬНЫЙ ПРОИГРЫШ (Переход в Соль мажор) ===
+          { pitch: 'E4', duration: 1.0, finger: 3 },
+          { pitch: 'D4', duration: 0.5, finger: 2 },
+          { pitch: 'C4', duration: 0.5, finger: 1 },
+          { pitch: 'B3', duration: 2.0, finger: 1 },
+          { pitch: 'G4', duration: 1.0, finger: 4 },
+          { pitch: 'F#4', duration: 0.5, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 2 },
+          { pitch: 'F#4', duration: 1.5, finger: 3 },
+          { pitch: 'G4', duration: 0.5, finger: 4 },
+          { pitch: 'A4', duration: 1.0, finger: 5 },
+          { pitch: 'G4', duration: 0.5, finger: 4 },
+          { pitch: 'F#4', duration: 0.5, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 2 },
+          { pitch: 'F#4', duration: 0.5, finger: 3 },
+          { pitch: 'G4', duration: 2.0, finger: 4 },
+
+          // === ФИНАЛЬНЫЙ ПРИПЕВ (1-я вольта) ===
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'A4', duration: 0.5, finger: 5 },
+          { pitch: 'G#4', duration: 0.5, finger: 4 },
+          { pitch: 'F#4', duration: 1.0, finger: 3 },
+          { pitch: 'E4', duration: 1.0, finger: 2 },
+          { pitch: 'C#4', duration: 1.5, finger: 1 },
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          { pitch: 'B3', duration: 1.5, finger: 2 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'D4', duration: 1.0, finger: 4 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          { pitch: 'A3', duration: 2.0, finger: 1 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'A4', duration: 0.5, finger: 4 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'B4', duration: 1.0, finger: 5 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'G#4', duration: 2.0, finger: 3 },
+          { pitch: 'C#5', duration: 1.5, finger: 5 },
+          { pitch: 'B4', duration: 0.5, finger: 4 },
+          { pitch: 'A4', duration: 1.0, finger: 3 },
+          { pitch: 'G#4', duration: 0.5, finger: 2 },
+          { pitch: 'F#4', duration: 0.5, finger: 1 },
+          { pitch: 'E4', duration: 2.0, finger: 1 },
+
+          // === ПОВТОР ПРИПЕВА (2-я вольта и торжественная кода: На-ве-ка!) ===
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'A4', duration: 0.5, finger: 5 },
+          { pitch: 'G#4', duration: 0.5, finger: 4 },
+          { pitch: 'F#4', duration: 1.0, finger: 3 },
+          { pitch: 'E4', duration: 1.0, finger: 2 },
+          { pitch: 'C#4', duration: 1.5, finger: 1 },
+          { pitch: 'A3', duration: 0.5, finger: 1 },
+          { pitch: 'B3', duration: 1.5, finger: 2 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'D4', duration: 1.0, finger: 4 },
+          { pitch: 'C#4', duration: 0.5, finger: 3 },
+          { pitch: 'B3', duration: 0.5, finger: 2 },
+          { pitch: 'A3', duration: 2.0, finger: 1 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'A4', duration: 0.5, finger: 4 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'B4', duration: 1.0, finger: 5 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'G#4', duration: 2.0, finger: 3 },
+          { pitch: 'C#5', duration: 1.5, finger: 5 },
+          { pitch: 'B4', duration: 0.5, finger: 4 },
+          { pitch: 'A4', duration: 1.0, finger: 3 },
+          { pitch: 'G#4', duration: 0.5, finger: 2 },
+          { pitch: 'F#4', duration: 0.5, finger: 1 },
+          { pitch: 'E4', duration: 2.0, finger: 1 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'G#4', duration: 1.0, finger: 3 },
+          { pitch: 'F#4', duration: 4.0, finger: 2 },
+          // Кода: На ве-ка! (B4 A4 F#4)
+          { pitch: 'B4', duration: 2.0, finger: 5 },
+          { pitch: 'A4', duration: 2.0, finger: 4 },
+          { pitch: 'F#4', duration: 4.0, finger: 2 }
+        ]
+      },
       {
         id: 'kalinka_malinka',
         title: 'Калинка-малинка (Русская народная)',
@@ -1003,8 +1363,7 @@
           this.ctx.resume();
         }
       }
-
-      playNote(pitch, durationSec = 1.0) {
+      playNote(pitch, durationSec = 1.0, velocity = 0.85) {
         this.init();
         const freq = pitchToFrequency(pitch);
         const now = this.ctx.currentTime;
@@ -1051,10 +1410,11 @@
         osc3Gain.connect(voiceGain);
 
         const decayTime = this.sustain ? Math.max(durationSec * 2.8, 3.2) : Math.max(durationSec, 1.3);
-        const peakGain = this.timbre === 'harpsichord' ? 0.55 : 0.9;
+        const baseGain = this.timbre === 'harpsichord' ? 0.55 : 0.9;
+        const peakGain = baseGain * Math.max(0.2, Math.min(1.2, velocity));
         voiceGain.gain.setValueAtTime(0.0001, now);
         voiceGain.gain.linearRampToValueAtTime(peakGain, now + 0.006);
-        voiceGain.gain.exponentialRampToValueAtTime(0.25, now + 0.25);
+        voiceGain.gain.exponentialRampToValueAtTime(0.25 * velocity, now + 0.25);
         voiceGain.gain.exponentialRampToValueAtTime(0.0001, now + decayTime);
 
         osc1.start(now);
@@ -1096,6 +1456,17 @@
     const state = {
       currentSongIndex: 0,
       mode: 'wait', // 'wait' | 'flow' | 'listen'
+      handMode: 'both', // 'both' | 'right' | 'left'
+      sheetMusicVisible: false,
+      blindMemoryLevel: 0, // 0 = выкл, 1 = без названий нот, 2 = полупрозрачные блоки, 3 = полная память
+      loopStartIndex: null,
+      loopEndIndex: null,
+      isRecording: false,
+      recordedNotes: [],
+      recordStartTime: 0,
+      chordsTrainerActive: false,
+      currentChordIndex: 0,
+      heldPitches: new Set(),
       isPlaying: false,
       tempoMultiplier: 1.0, // 0.3x до 1.5x
       sustainEnabled: false,
@@ -1123,6 +1494,52 @@
       // Временные метки нот для падающего водопада (Waterfall)
       timelineNotes: []
     };
+
+    /* =====================================================================
+       4.1. ПОДДЕРЖКА РЕАЛЬНЫХ MIDI-КЛАВИАТУР (WEB MIDI API)
+       ===================================================================== */
+    function initWebMIDI() {
+      if (!navigator.requestMIDIAccess) return;
+      navigator.requestMIDIAccess().then((midiAccess) => {
+        const updateMidiStatus = () => {
+          const inputs = Array.from(midiAccess.inputs.values());
+          const badge = document.getElementById('midiBadge');
+          const txt = document.getElementById('midiStatusText');
+          if (inputs.length > 0) {
+            badge.classList.remove('text-slate-400', 'border-slate-800');
+            badge.classList.add('text-emerald-400', 'border-emerald-500/40', 'bg-emerald-950/30');
+            txt.textContent = `MIDI: ${inputs[0].name.slice(0, 12)}`;
+            inputs.forEach(input => {
+              input.onmidimessage = handleMIDIMessage;
+            });
+          } else {
+            txt.textContent = 'MIDI';
+          }
+        };
+        updateMidiStatus();
+        midiAccess.onstatechange = updateMidiStatus;
+      }).catch(() => {});
+    }
+
+    function handleMIDIMessage(msg) {
+      const [status, noteNum, velocity] = msg.data;
+      const command = status & 0xf0;
+      const octave = Math.floor(noteNum / 12) - 1;
+      const noteName = NOTE_NAMES_LATIN[noteNum % 12];
+      const pitch = `${noteName}${octave}`;
+
+      if (command === 144 && velocity > 0) {
+        // Note On
+        pressKeyVisualAndSound(pitch, true, velocity / 127);
+      } else if (command === 128 || (command === 144 && velocity === 0)) {
+        // Note Off
+        releaseKeyVisual(pitch);
+      } else if (command === 176 && noteNum === 64) {
+        // Sustain Pedal CC 64
+        state.sustainEnabled = velocity >= 64;
+        audio.sustain = state.sustainEnabled;
+      }
+    }
 
     /* =====================================================================
        5. КЛАВИАТУРА ПИАНИНО: ГЕНЕРАЦИЯ И СЕНСОРНОЕ УПРАВЛЕНИЕ (MULTITOUCH)
@@ -1222,12 +1639,12 @@
         const noteOnly = norm.replace(/\d/, '');
         const octOnly = norm.match(/\d/)[0];
 
-        if (state.labelMode === 'solfege') {
+        if (state.blindMemoryLevel >= 1 || state.labelMode === 'off') {
+          lbl.textContent = '';
+        } else if (state.labelMode === 'solfege') {
           lbl.textContent = NOTE_NAMES_SOLFEGE[noteOnly] || noteOnly;
         } else if (state.labelMode === 'latin') {
           lbl.textContent = `${noteOnly}${octOnly}`;
-        } else {
-          lbl.textContent = '';
         }
       });
     }
@@ -1235,9 +1652,22 @@
     /* Обработка мультитач и кликов */
     const currentlyActivePitches = new Set();
 
-    function pressKeyVisualAndSound(pitch, isUserHit = true) {
+    function pressKeyVisualAndSound(pitch, isUserHit = true, velocity = 0.85) {
       const norm = normalizePitch(pitch);
-      audio.playNote(norm);
+      audio.playNote(norm, 1.0, velocity);
+      state.heldPitches.add(norm);
+
+      // Запись в Режиме композитора (REC)
+      if (state.isRecording && isUserHit) {
+        const now = performance.now();
+        const deltaSec = state.recordedNotes.length === 0 ? 0 : (now - state.recordStartTime) / 1000;
+        state.recordStartTime = now;
+        state.recordedNotes.push({
+          pitch: norm,
+          duration: Math.max(0.25, Math.min(2.0, Math.round((deltaSec || 0.5) * 4) / 4)),
+          finger: 3
+        });
+      }
 
       // Визуальная подсветка клавиши и световой луч на канвасе
       const keyEl = pianoKeyboardEl.querySelector(`[data-pitch="${norm}"]`);
@@ -1258,6 +1688,12 @@
         }, 110);
       }
 
+      // Проверка в тренажере аккордов
+      if (state.chordsTrainerActive && isUserHit) {
+        checkChordChallengeInput();
+        return;
+      }
+
       // Если нажатие произвел пользователь во время практики
       if (isUserHit) {
         handleUserNoteInput(norm);
@@ -1266,6 +1702,7 @@
 
     function releaseKeyVisual(pitch) {
       const norm = normalizePitch(pitch);
+      state.heldPitches.delete(norm);
       const keyEl = pianoKeyboardEl.querySelector(`[data-pitch="${norm}"]`);
       if (keyEl) {
         keyEl.classList.remove('active');
@@ -1440,19 +1877,21 @@
         const norm = normalizePitch(nextNote.pitch);
         const noteName = norm.replace(/\d/, '');
         const displayNote = state.labelMode === 'solfege' ? `${NOTE_NAMES_SOLFEGE[noteName]} (${norm})` : norm;
-        hintNoteEl.textContent = displayNote;
-        hintFingerEl.textContent = nextNote.finger ? `Палец ${nextNote.finger}` : '-';
+        hintNoteEl.textContent = state.blindMemoryLevel >= 2 ? '???' : displayNote;
+        hintFingerEl.textContent = (nextNote.finger && state.blindMemoryLevel < 2) ? `Палец ${nextNote.finger}` : '-';
         progressEl.textContent = `${state.currentNoteIndex + 1} / ${song.notes.length}`;
 
-        // Подсвечиваем клавишу-мишень на фортепиано
-        const targetKey = pianoKeyboardEl.querySelector(`[data-pitch="${norm}"]`);
-        if (targetKey) {
-          targetKey.classList.add('target-hint');
-          const fingerBadge = targetKey.querySelector('.key-finger-hint');
-          if (fingerBadge && nextNote.finger) {
-            fingerBadge.textContent = nextNote.finger;
-            fingerBadge.classList.remove('hidden');
-            fingerBadge.classList.add('flex');
+        // Подсвечиваем клавишу-мишень на фортепиано (если не включена полная слепая память)
+        if (state.blindMemoryLevel < 3) {
+          const targetKey = pianoKeyboardEl.querySelector(`[data-pitch="${norm}"]`);
+          if (targetKey) {
+            targetKey.classList.add('target-hint');
+            const fingerBadge = targetKey.querySelector('.key-finger-hint');
+            if (fingerBadge && nextNote.finger && state.blindMemoryLevel < 2) {
+              fingerBadge.textContent = nextNote.finger;
+              fingerBadge.classList.remove('hidden');
+              fingerBadge.classList.add('flex');
+            }
           }
         }
       } else {
@@ -1460,12 +1899,47 @@
         hintFingerEl.textContent = '✔';
         progressEl.textContent = `${song.notes.length} / ${song.notes.length}`;
       }
+
+      if (state.sheetMusicVisible) {
+        renderSheetMusicStaff();
+      }
+    }
+
+    // Вспомогательная проверка: принадлежит ли нота выбранной руке, либо её играет ИИ-аккомпаниатор
+    function isNoteForActiveHand(pitch) {
+      if (state.handMode === 'both') return true;
+      const oct = parseInt(normalizePitch(pitch).slice(-1), 10);
+      if (state.handMode === 'right') return oct >= 4;
+      if (state.handMode === 'left') return oct <= 3;
+      return true;
+    }
+
+    function autoPlayCompanionNotesIfNeeded() {
+      const song = SONGS_DB[state.currentSongIndex];
+      if (!song || state.handMode === 'both') return;
+
+      while (state.currentNoteIndex < song.notes.length) {
+        const note = song.notes[state.currentNoteIndex];
+        if (isNoteForActiveHand(note.pitch)) break;
+
+        // ИИ-партнёр исполняет партию второй руки
+        pressKeyVisualAndSound(note.pitch, false, 0.55);
+        setTimeout(() => releaseKeyVisual(note.pitch), 250);
+        state.currentNoteIndex++;
+      }
+      updateGuidanceHUD();
+      if (state.currentNoteIndex >= song.notes.length) {
+        finishSong();
+      }
     }
 
     // Реакция на нажатие ноты пользователем
     function handleUserNoteInput(playedPitch) {
       const song = SONGS_DB[state.currentSongIndex];
       if (!song || state.currentNoteIndex >= song.notes.length) return;
+
+      autoPlayCompanionNotesIfNeeded();
+      if (state.currentNoteIndex >= song.notes.length) return;
 
       const targetNote = song.notes[state.currentNoteIndex];
       const normTarget = normalizePitch(targetNote.pitch);
@@ -1485,6 +1959,14 @@
           if (keyEl) spawnKeySparks(keyEl, '#34d399', 16);
 
           state.currentNoteIndex++;
+
+          // Проверка A-B петли
+          if (state.loopEnabled && state.loopEndIndex !== null && state.currentNoteIndex > state.loopEndIndex) {
+            state.currentNoteIndex = state.loopStartIndex !== null ? state.loopStartIndex : 0;
+            showAccuracyToast('A-B ПОВТОР ФРАГМЕНТА 🔁');
+          }
+
+          autoPlayCompanionNotesIfNeeded();
           updateScoreDisplay();
           updateGuidanceHUD();
 
@@ -1510,6 +1992,7 @@
           if (keyEl) spawnKeySparks(keyEl, '#fbbf24', 18);
 
           state.currentNoteIndex++;
+          autoPlayCompanionNotesIfNeeded();
         } else {
           state.streak = 0;
           triggerHitFeedback(playedPitch, 'ОШИБКА', 'text-rose-400');
@@ -1667,15 +2150,23 @@
           if (noteY + noteH > 0 && noteY < height + 40) {
             // Градиент нотного блока
             const isTarget = idx === state.currentNoteIndex;
+            const isActiveHand = isNoteForActiveHand(tn.pitch);
             const grad = ctx.createLinearGradient(noteX, noteY, noteX + noteW, noteY + noteH);
 
-            if (isTarget) {
+            if (!isActiveHand) {
+              grad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+              grad.addColorStop(1, 'rgba(14, 165, 233, 0.25)');
+            } else if (isTarget) {
               grad.addColorStop(0, '#fde047');
               grad.addColorStop(1, '#f59e0b');
             } else {
               grad.addColorStop(0, '#a78bfa');
               grad.addColorStop(1, '#6366f1');
             }
+
+            ctx.save();
+            if (state.blindMemoryLevel === 2) ctx.globalAlpha = 0.28;
+            if (state.blindMemoryLevel >= 3) ctx.globalAlpha = 0.05;
 
             ctx.fillStyle = grad;
             ctx.shadowColor = isTarget ? 'rgba(250, 204, 21, 0.65)' : 'rgba(99, 102, 241, 0.35)';
@@ -1686,13 +2177,14 @@
             ctx.shadowBlur = 0;
 
             // Номер пальца внутри падающей ноты
-            if (tn.finger) {
+            if (tn.finger && isActiveHand && state.blindMemoryLevel < 2) {
               ctx.fillStyle = isTarget ? '#0f172a' : '#ffffff';
               ctx.font = 'bold 11px sans-serif';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
               ctx.fillText(`${tn.finger}`, noteX + noteW / 2, noteY + noteH / 2);
             }
+            ctx.restore();
           }
         });
       }
@@ -1827,12 +2319,13 @@
 
     function resetSongProgress() {
       pausePlayback();
-      state.currentNoteIndex = 0;
+      state.currentNoteIndex = (state.loopEnabled && state.loopStartIndex !== null) ? state.loopStartIndex : 0;
       state.score = 0;
       state.streak = 0;
       state.maxStreak = 0;
       updateScoreDisplay();
       prepareSongTimeline();
+      autoPlayCompanionNotesIfNeeded();
     }
 
     function finishSong() {
@@ -1847,31 +2340,32 @@
         } else {
           showAccuracyToast('ПОВТОР КРУГА! 🔄');
         }
-        state.currentNoteIndex = 0;
+        state.currentNoteIndex = state.loopStartIndex !== null ? state.loopStartIndex : 0;
         prepareSongTimeline();
+        autoPlayCompanionNotesIfNeeded();
         if (state.mode === 'listen' || state.mode === 'flow') {
           startPlayback();
         }
         return;
       }
 
-      // Иначе показываем карточку результатов исполнения
+      // Отображаем карточку итогов исполнения
       const baseMax = song.notes.length * 10;
-      const pct = song.notes.length > 0 ? Math.min(100, Math.round((state.score / baseMax) * 100)) : 100;
+      const pct = song.notes.length > 0 ? Math.min(100, Math.round((state.score / baseMax) * 100)) : 0;
 
       document.getElementById('summarySongName').textContent = song.title;
       document.getElementById('summaryAccuracy').textContent = `${pct}%`;
       document.getElementById('summaryStreak').textContent = state.maxStreak;
       document.getElementById('summaryTempo').textContent = `${Math.round(state.tempoMultiplier * 100)}%`;
 
-      const autoNotice = document.getElementById('autoSpeedNotification');
+      const autoSpeedNotif = document.getElementById('autoSpeedNotification');
       if (state.autoSpeedEnabled && state.tempoMultiplier < 1.5) {
         const nextTempo = Math.min(1.5, Math.round((state.tempoMultiplier + 0.05) * 100) / 100);
         setTempo(nextTempo);
         document.getElementById('nextAcceleratedTempo').textContent = `${Math.round(nextTempo * 100)}%`;
-        autoNotice.classList.remove('hidden');
+        autoSpeedNotif.classList.remove('hidden');
       } else {
-        autoNotice.classList.add('hidden');
+        autoSpeedNotif.classList.add('hidden');
       }
 
       document.getElementById('summaryModal').classList.remove('hidden');
@@ -1879,30 +2373,296 @@
 
     function setTempo(newMult) {
       state.tempoMultiplier = newMult;
-      const pctText = `${Math.round(state.tempoMultiplier * 100)}%`;
-      document.getElementById('tempoDisplay').textContent = pctText;
-      const mobileDisp = document.getElementById('mobileTempoDisplay');
-      if (mobileDisp) mobileDisp.textContent = pctText;
+      const pct = `${Math.round(newMult * 100)}%`;
+      document.getElementById('tempoDisplay').textContent = pct;
+      const mobDisp = document.getElementById('mobileTempoDisplay');
+      if (mobDisp) mobDisp.textContent = pct;
       prepareSongTimeline();
     }
 
-    function flashMetronomePulse() {
-      const pulseEl = document.getElementById('metronomePulse');
-      if (!pulseEl) return;
-      pulseEl.classList.add('bg-amber-400', 'scale-125', 'shadow-lg', 'shadow-amber-400/60');
-      setTimeout(() => {
-        pulseEl.classList.remove('bg-amber-400', 'scale-125', 'shadow-lg', 'shadow-amber-400/60');
-      }, 100);
-    }
-
-    function showAccuracyToast(text) {
+    function showAccuracyToast(msg) {
       const toast = document.getElementById('accuracyToast');
-      toast.textContent = text;
+      if (!toast) return;
+      toast.textContent = msg;
       toast.classList.remove('hidden');
-      setTimeout(() => toast.classList.add('hidden'), 2500);
+      clearTimeout(toast._hideTimer);
+      toast._hideTimer = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2400);
     }
 
-    // Изменение темпа (+ / -) для ПК и мобильных
+    function flashMetronomePulse() {
+      const pulse = document.getElementById('metronomePulse');
+      if (!pulse) return;
+      pulse.classList.remove('bg-slate-700/50', 'border-slate-600');
+      pulse.classList.add('bg-amber-400', 'border-amber-200', 'scale-125', 'shadow-lg', 'shadow-amber-400/50');
+      setTimeout(() => {
+        pulse.classList.remove('bg-amber-400', 'border-amber-200', 'scale-125', 'shadow-lg', 'shadow-amber-400/50');
+        pulse.classList.add('bg-slate-700/50', 'border-slate-600');
+      }, 120);
+    }
+
+    // Умный повтор (Loop), A-B точки и Авто-разгон темпа
+    const btnSetLoopA = document.getElementById('btnSetLoopA');
+    const btnSetLoopB = document.getElementById('btnSetLoopB');
+    const btnLoopToggle = document.getElementById('btnLoopToggle');
+
+    btnSetLoopA.addEventListener('click', () => {
+      state.loopStartIndex = state.currentNoteIndex;
+      btnSetLoopA.classList.add('bg-emerald-600', 'text-white');
+      showAccuracyToast(`Точка A установлена (нота #${state.loopStartIndex + 1})`);
+    });
+
+    btnSetLoopB.addEventListener('click', () => {
+      state.loopEndIndex = Math.max(state.currentNoteIndex, (state.loopStartIndex || 0) + 1);
+      state.loopEnabled = true;
+      btnSetLoopB.classList.add('bg-emerald-600', 'text-white');
+      document.getElementById('loopStatusText').textContent = 'A-B: Вкл';
+      btnLoopToggle.className = 'px-2 py-0.5 rounded-lg bg-violet-600 text-white text-[11px] font-semibold flex items-center gap-1 transition shadow-sm';
+      showAccuracyToast(`Петля A-B активна (ноты #${(state.loopStartIndex || 0) + 1}–#${state.loopEndIndex + 1})`);
+    });
+
+    btnLoopToggle.addEventListener('click', () => {
+      state.loopEnabled = !state.loopEnabled;
+      if (!state.loopEnabled) {
+        state.loopStartIndex = null;
+        state.loopEndIndex = null;
+        btnSetLoopA.classList.remove('bg-emerald-600', 'text-white');
+        btnSetLoopB.classList.remove('bg-emerald-600', 'text-white');
+      }
+      document.getElementById('loopStatusText').textContent = state.loopEnabled ? 'Повтор: Вкл' : 'Повтор';
+      btnLoopToggle.className = state.loopEnabled
+        ? 'px-2 py-0.5 rounded-lg bg-violet-600 text-white text-[11px] font-semibold flex items-center gap-1 transition shadow-sm'
+        : 'px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium flex items-center gap-1 transition';
+    });
+
+    /* =====================================================================
+       8.1. ИНТЕРАКТИВНЫЙ НОТНЫЙ СТАН (SIGHT-READING CANVAS)
+       ===================================================================== */
+    function renderSheetMusicStaff() {
+      const sheetCanvas = document.getElementById('sheetMusicCanvas');
+      if (!sheetCanvas || !state.sheetMusicVisible) return;
+      const rect = sheetCanvas.getBoundingClientRect();
+      sheetCanvas.width = rect.width * window.devicePixelRatio;
+      sheetCanvas.height = rect.height * window.devicePixelRatio;
+      const sCtx = sheetCanvas.getContext('2d');
+      sCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      const w = rect.width;
+      const h = rect.height;
+      sCtx.clearRect(0, 0, w, h);
+
+      // 5 линеек нотного стана
+      const topY = 22;
+      const lineGap = 8;
+      sCtx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+      sCtx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        const y = topY + i * lineGap;
+        sCtx.beginPath();
+        sCtx.moveTo(20, y);
+        sCtx.lineTo(w - 20, y);
+        sCtx.stroke();
+      }
+
+      // Символ скрипичного ключа
+      sCtx.fillStyle = '#38bdf8';
+      sCtx.font = '34px serif';
+      sCtx.fillText('𝄞', 26, topY + 30);
+
+      // Отображение ближайших 10 нот на нотном стане
+      const song = SONGS_DB[state.currentSongIndex];
+      const stepMap = { 'C': 0, 'D': 1, 'E': 2, 'F': 3, 'G': 4, 'A': 5, 'B': 6 };
+
+      for (let offset = 0; offset < 10; offset++) {
+        const idx = state.currentNoteIndex + offset;
+        if (idx >= song.notes.length) break;
+        const n = song.notes[idx];
+        const norm = normalizePitch(n.pitch);
+        const letter = norm[0];
+        const oct = parseInt(norm.slice(-1), 10);
+        const isSharp = norm.includes('#');
+
+        // C4 находится на первой добавочной линейке снизу (topY + 5 * lineGap)
+        const diatonicStepsFromC4 = (oct - 4) * 7 + stepMap[letter];
+        const noteY = (topY + 5 * lineGap) - diatonicStepsFromC4 * (lineGap / 2);
+        const noteX = 85 + offset * ((w - 120) / 10);
+
+        // Добавочная линейка для До первой октавы (C4)
+        if (diatonicStepsFromC4 === 0) {
+          sCtx.strokeStyle = '#94a3b8';
+          sCtx.beginPath();
+          sCtx.moveTo(noteX - 10, noteY);
+          sCtx.lineTo(noteX + 10, noteY);
+          sCtx.stroke();
+        }
+
+        const isCurrent = offset === 0;
+        sCtx.fillStyle = isCurrent ? '#fbbf24' : '#e2e8f0';
+        sCtx.beginPath();
+        sCtx.ellipse(noteX, noteY, 5.5, 4, -0.25, 0, Math.PI * 2);
+        sCtx.fill();
+
+        // Штиль ноты
+        sCtx.strokeStyle = isCurrent ? '#fbbf24' : '#e2e8f0';
+        sCtx.lineWidth = 1.4;
+        sCtx.beginPath();
+        sCtx.moveTo(noteX + 5, noteY);
+        sCtx.lineTo(noteX + 5, noteY - 20);
+        sCtx.stroke();
+
+        if (isSharp) {
+          sCtx.font = 'bold 11px sans-serif';
+          sCtx.fillText('♯', noteX - 13, noteY + 4);
+        }
+      }
+    }
+
+    // Кнопки выбора руки (Обе / Правая / Левая)
+    document.querySelectorAll('.hand-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.hand-btn').forEach(b => {
+          b.className = 'hand-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white transition';
+        });
+        btn.className = 'hand-btn px-2 py-0.5 rounded text-[11px] font-semibold bg-violet-600 text-white transition';
+        state.handMode = btn.dataset.hand;
+        resetSongProgress();
+      });
+    });
+
+    // Переключатель нотного стана
+    const btnSheetMusicToggle = document.getElementById('btnSheetMusicToggle');
+    btnSheetMusicToggle.addEventListener('click', () => {
+      state.sheetMusicVisible = !state.sheetMusicVisible;
+      const panel = document.getElementById('sheetMusicPanel');
+      if (state.sheetMusicVisible) {
+        panel.classList.remove('hidden');
+        btnSheetMusicToggle.classList.add('bg-sky-600', 'text-white');
+        renderSheetMusicStaff();
+      } else {
+        panel.classList.add('hidden');
+        btnSheetMusicToggle.classList.remove('bg-sky-600', 'text-white');
+      }
+      resizeCanvas();
+    });
+
+    // Режим «Слепая память» (3 ступени сложности запоминания)
+    const btnBlindMemoryToggle = document.getElementById('btnBlindMemoryToggle');
+    btnBlindMemoryToggle.addEventListener('click', () => {
+      state.blindMemoryLevel = (state.blindMemoryLevel + 1) % 4;
+      const labels = ['Память', 'Память I', 'Память II', 'Память III'];
+      document.getElementById('blindMemoryText').textContent = labels[state.blindMemoryLevel];
+      if (state.blindMemoryLevel > 0) {
+        btnBlindMemoryToggle.classList.add('bg-fuchsia-600', 'text-white');
+        showAccuracyToast(`Режим «${labels[state.blindMemoryLevel]}» активирован 🧠`);
+      } else {
+        btnBlindMemoryToggle.classList.remove('bg-fuchsia-600', 'text-white');
+      }
+      updateKeyLabels();
+      updateGuidanceHUD();
+    });
+
+    /* =====================================================================
+       8.2. ТРЕНАЖЕР АККОРДОВ И ГАММ (CHORDS WARMUP)
+       ===================================================================== */
+    const CHORDS_LIST = [
+      { name: 'До мажор (C Major)', notes: ['C4', 'E4', 'G4'] },
+      { name: 'Ля минор (A Minor)', notes: ['A3', 'C4', 'E4'] },
+      { name: 'Фа мажор (F Major)', notes: ['F4', 'A4', 'C5'] },
+      { name: 'Соль мажор (G Major)', notes: ['G4', 'B4', 'D5'] },
+      { name: 'Ре минор (D Minor)', notes: ['D4', 'F4', 'A4'] },
+      { name: 'Ми минор (E Minor)', notes: ['E4', 'G4', 'B4'] },
+      { name: 'До мажорный септаккорд (Cmaj7)', notes: ['C4', 'E4', 'G4', 'B4'] }
+    ];
+
+    function loadChordChallenge(idx) {
+      state.currentChordIndex = idx % CHORDS_LIST.length;
+      const ch = CHORDS_LIST[state.currentChordIndex];
+      document.getElementById('targetChordName').textContent = ch.name;
+      const ruNotes = ch.notes.map(n => `${NOTE_NAMES_SOLFEGE[n.replace(/\d/, '')]} (${n})`).join(' — ');
+      document.getElementById('targetChordNotes').textContent = ruNotes;
+      document.getElementById('chordChallengeFeedback').textContent = 'Зажмите все клавиши аккорда одновременно!';
+      document.getElementById('chordChallengeFeedback').className = 'mt-3 text-xs font-bold text-amber-300';
+
+      document.querySelectorAll('.target-hint').forEach(el => el.classList.remove('target-hint'));
+      ch.notes.forEach(n => {
+        const k = pianoKeyboardEl.querySelector(`[data-pitch="${normalizePitch(n)}"]`);
+        if (k) k.classList.add('target-hint');
+      });
+    }
+
+    function checkChordChallengeInput() {
+      const ch = CHORDS_LIST[state.currentChordIndex];
+      const allPressed = ch.notes.every(n => state.heldPitches.has(normalizePitch(n)));
+      if (allPressed) {
+        document.getElementById('chordChallengeFeedback').textContent = 'БРАВО! Аккорд взят чисто! 🎉';
+        document.getElementById('chordChallengeFeedback').className = 'mt-3 text-sm font-extrabold text-emerald-400';
+        setTimeout(() => {
+          if (state.chordsTrainerActive) loadChordChallenge(state.currentChordIndex + 1);
+        }, 900);
+      }
+    }
+
+    document.getElementById('btnChordsTrainer').addEventListener('click', () => {
+      pausePlayback();
+      state.chordsTrainerActive = true;
+      document.getElementById('chordsModal').classList.remove('hidden');
+      loadChordChallenge(0);
+    });
+    document.getElementById('btnCloseChords').addEventListener('click', () => {
+      state.chordsTrainerActive = false;
+      document.getElementById('chordsModal').classList.add('hidden');
+      updateGuidanceHUD();
+    });
+    document.getElementById('btnListenChord').addEventListener('click', () => {
+      const ch = CHORDS_LIST[state.currentChordIndex];
+      ch.notes.forEach((n, i) => {
+        setTimeout(() => pressKeyVisualAndSound(n, false), i * 90);
+        setTimeout(() => releaseKeyVisual(n), 700);
+      });
+    });
+    document.getElementById('btnNextChord').addEventListener('click', () => {
+      loadChordChallenge(state.currentChordIndex + 1);
+    });
+
+    /* =====================================================================
+       8.3. ЗАПИСЬ СОБСТВЕННОГО ИСПОЛНЕНИЯ (РЕЖИМ КОМПОЗИТОРА REC)
+       ===================================================================== */
+    const btnRecordToggle = document.getElementById('btnRecordToggle');
+    btnRecordToggle.addEventListener('click', () => {
+      if (!state.isRecording) {
+        state.isRecording = true;
+        state.recordedNotes = [];
+        state.recordStartTime = performance.now();
+        document.getElementById('recDot').classList.add('animate-ping');
+        document.getElementById('recText').textContent = 'СТОП';
+        btnRecordToggle.classList.add('bg-rose-950/60', 'border-rose-500/60');
+        showAccuracyToast('Идёт запись вашей игры... 🔴');
+      } else {
+        state.isRecording = false;
+        document.getElementById('recDot').classList.remove('animate-ping');
+        document.getElementById('recText').textContent = 'REC';
+        btnRecordToggle.classList.remove('bg-rose-950/60', 'border-rose-500/60');
+
+        if (state.recordedNotes.length >= 2) {
+          const customId = 'custom_rec_' + Date.now();
+          SONGS_DB.unshift({
+            id: customId,
+            title: `Моя запись #${SONGS_DB.filter(s => s.id.startsWith('custom_rec_')).length + 1}`,
+            composer: 'Ваша импровизация',
+            difficulty: 'Medium',
+            defaultBpm: 110,
+            description: 'Собственная записанная мелодия для отработки и прослушивания.',
+            notes: state.recordedNotes
+          });
+          loadSong(0);
+          showAccuracyToast(`Запись сохранена (${state.recordedNotes.length} нот)! 🎵`);
+        } else {
+          showAccuracyToast('Сыграйте хотя бы 2 ноты для сохранения записи');
+        }
+      }
+    });
+
     document.getElementById('btnTempoInc').addEventListener('click', () => {
       if (state.tempoMultiplier < 1.5) {
         setTempo(Math.min(1.5, Math.round((state.tempoMultiplier + 0.1) * 10) / 10));
@@ -1940,16 +2700,6 @@
         timbreText.textContent = 'Рояль';
         showAccuracyToast('Тембр: Концертный рояль 🎼');
       }
-    });
-
-    // Умный повтор (Loop) и Авто-разгон темпа
-    const btnLoopToggle = document.getElementById('btnLoopToggle');
-    btnLoopToggle.addEventListener('click', () => {
-      state.loopEnabled = !state.loopEnabled;
-      document.getElementById('loopStatusText').textContent = state.loopEnabled ? 'Повтор: Вкл' : 'Повтор: Выкл';
-      btnLoopToggle.className = state.loopEnabled
-        ? 'px-2 py-0.5 rounded-lg bg-violet-600 text-white text-[11px] font-semibold flex items-center gap-1 transition shadow-sm'
-        : 'px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium flex items-center gap-1 transition';
     });
 
     const btnAutoSpeedToggle = document.getElementById('btnAutoSpeedToggle');
@@ -2185,9 +2935,10 @@
       if (window.innerWidth >= 768 && window.innerWidth <= 1200) {
         state.keyBaseWidth = 48; // идеальная ширина под пальцы на iPad
       }
+      initWebMIDI();
       buildKeyboard();
       resizeCanvas();
-      loadSong(0); // Загружаем "Для Элизы"
+      loadSong(0); // Загружаем "Калинку-малинку"
       requestAnimationFrame(renderWaterfall);
     };
   </script>
