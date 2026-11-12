@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="ru" class="h-full bg-slate-950 text-slate-100 select-none">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Virtuoso - Профессиональный тренажер пианино</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+            },
+            gold: '#fbbf24',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Предотвращение зума и прокрутки при игре на тачскринах планшетов */
+    html, body {
+      overscroll-behavior: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    /* Стилизация скроллбаров */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(139, 92, 246, 0.7);
+    }
+
+    /* Эффекты свечения клавиш */
+    .key-white {
+      background: linear-gradient(to bottom, #fdfdfd 0%, #e2e8f0 100%);
+      box-shadow: inset 0 -4px 0 #cbd5e1, 0 3px 6px rgba(0,0,0,0.3);
+      transition: background 0.06s ease, transform 0.05s ease, box-shadow 0.06s ease;
+    }
+    .key-white.active, .key-white:active {
+      background: linear-gradient(to bottom, #ddd6fe 0%, #c4b5fd 100%) !important;
+      transform: translateY(2px);
+      box-shadow: inset 0 -1px 0 #8b5cf6, 0 1px 3px rgba(139,92,246,0.6) !important;
+    }
+    .key-white.target-hint {
+      background: linear-gradient(to bottom, #fef08a 0%, #fde047 100%) !important;
+      box-shadow: 0 0 18px rgba(250, 204, 21, 0.8), inset 0 -3px 0 #eab308 !important;
+    }
+
+    .key-black {
+      background: linear-gradient(180deg, #1e293b 0%, #090d16 100%);
+      box-shadow: inset 0 -2px 0 #334155, 0 4px 8px rgba(0,0,0,0.7);
+      transition: background 0.06s ease, transform 0.05s ease;
+    }
+    .key-black.active, .key-black:active {
+      background: linear-gradient(180deg, #6d28d9 0%, #4c1d95 100%) !important;
+      transform: translateY(2px);
+      box-shadow: 0 0 14px rgba(167, 139, 250, 0.7) !important;
+    }
+    .key-black.target-hint {
+      background: linear-gradient(180deg, #b45309 0%, #78350f 100%) !important;
+      box-shadow: 0 0 18px rgba(245, 158, 11, 0.9) !important;
+    }
+
+    /* Floating hit effects */
+    @keyframes floatUpFade {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-35px) scale(1.2); }
+    }
+    .hit-popup {
+      animation: floatUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col bg-slate-950 font-sans overflow-hidden">
+
+  <!-- TOP HEADER / CONTROLS -->
+  <header class="flex-none bg-slate-900/90 border-b border-slate-800/80 backdrop-blur px-3 py-2 sm:px-6 sm:py-2.5 z-30">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+      
+      <!-- Logo & Song Selector Button -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-500/25 ring-1 ring-white/20">
+          <i class="fa-solid fa-music text-white text-base sm:text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-display font-bold text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">VIRTUOSO</span>
+            <span class="hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">PRO</span>
+          </div>
+          <button id="btnOpenSongs" class="text-xs sm:text-sm font-semibold text-slate-200 hover:text-white flex items-center gap-1.5 transition group">
+            <span id="currentSongTitle" class="max-w-[130px] sm:max-w-[220px] truncate text-violet-300 group-hover:text-violet-200">Für Elise</span>
+            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 group-hover:translate-y-0.5 transition-transform"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Center Learning Controls: Modes & Playback -->
+      <div class="flex items-center gap-1.5 sm:gap-3 bg-slate-950/70 p-1 sm:p-1.5 rounded-2xl border border-slate-800/80 shadow-inner">
+        <!-- Play / Pause -->
+        <button id="btnPlayPause" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white flex items-center justify-center shadow-md shadow-violet-700/30 active:scale-95 transition">
+          <i id="playIcon" class="fa-solid fa-play text-sm"></i>
+        </button>
+
+        <!-- Mode Dropdown / Segmented Toggle -->
+        <div class="flex bg-slate-900 rounded-xl p-0.5 text-xs font-medium border border-slate-800">
+          <button data-mode="wait" class="mode-btn px-2.5 py-1.5 rounded-lg transition text-white bg-violet-600 shadow-sm font-semibold flex items-center gap-1.5" title="Песня ждет правильного нажатия клавиши">
+            <i class="fa-solid fa-hand text-[11px]"></i>
+            <span class="hidden md:inline">Ждать меня</span>
+          </button>
+          <button data-mode="flow" class="mode-btn px-2.5 py-1.5 rounded-lg transition text-slate-400 hover:text-white flex items-center gap-1.5" title="Игра в реальном времени с оценкой точности">
+            <i class="fa-solid fa-chart-line text-[11px]"></i>
+            <span class="hidden md:inline">Поток</span>
+          </button>
+          <button data-mode="listen" class="mode-btn px-2.5 py-1.5 rounded-lg transition text-slate-400 hover:text-white flex items-center gap-1.5" title="Автовоспроизведение мелодии">
+            <i class="fa-solid fa-headphones text-[11px]"></i>
+            <span class="hidden md:inline">Слушать</span>
+          </button>
+        </div>
+
+        <!-- Restart -->
+        <button id="btnRestart" class="w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center transition" title="Начать заново">
+          <i class="fa-solid fa-arrow-rotate-left text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Right Controls: Tempo, Metronome, Settings -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Tempo Pill -->
+        <div class="hidden sm:flex items-center bg-slate-900/90 border border-slate-800 px-2 py-1 rounded-xl gap-2">
+          <button id="btnTempoDec" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white flex items-center justify-center text-xs active:scale-95 font-bold">-</button>
+          <span id="tempoDisplay" class="text-xs font-mono font-semibold text-slate-200 min-w-[54px] text-center">100%</span>
+          <button id="btnTempoInc" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white flex items-center justify-center text-xs active:scale-95 font-bold">+</button>
+        </div>
+
+        <!-- Metronome Button -->
+        <button id="btnMetronome" class="h-9 px-2.5 sm:px-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5 transition text-xs font-medium" title="Метроном">
+          <i class="fa-solid fa-bell text-xs"></i>
+          <span class="hidden lg:inline">Метроном</span>
+        </button>
+
+        <!-- Sustain Pedal -->
+        <button id="btnSustain" class="h-9 px-2.5 sm:px-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-violet-400 flex items-center gap-1.5 transition text-xs font-medium" title="Педаль сустейна">
+          <i class="fa-solid fa-water text-xs"></i>
+          <span class="hidden lg:inline">Сустейн</span>
+        </button>
+
+        <!-- Labels Toggle (C4 vs До vs Off) -->
+        <button id="btnToggleLabels" class="h-9 w-9 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition" title="Формат названий нот">
+          <span id="lblModeText">ДО</span>
+        </button>
+
+        <!-- Library button for mobile -->
+        <button id="btnMobileSongs" class="sm:hidden h-9 w-9 rounded-xl bg-violet-600/30 text-violet-300 border border-violet-500/40 flex items-center justify-center">
+          <i class="fa-solid fa-book-open text-xs"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- SECONDARY HUD BAR: Realtime Stats & Guidance -->
+  <div class="flex-none bg-slate-900/60 border-b border-slate-800/60 px-4 py-1.5 text-xs flex items-center justify-between text-slate-400">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <span class="text-slate-500">Следующая:</span>
+        <span id="hintNextNote" class="font-bold text-violet-400 text-sm tracking-wide font-mono">-</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-slate-500">Палец:</span>
+        <span id="hintFinger" class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[11px] ring-1 ring-amber-500/40">-</span>
+      </div>
+      <div id="accuracyToast" class="hidden font-bold tracking-wider text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse">
+        ОТЛИЧНО!
+      </div>
+    </div>
+
+    <!-- Score & Streak in Flow Mode -->
+    <div class="flex items-center gap-4 font-mono">
+      <div class="flex items-center gap-1.5">
+        <i class="fa-solid fa-fire text-amber-400 text-[11px]"></i>
+        <span>Серия:</span>
+        <span id="streakCount" class="font-bold text-white">0</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <i class="fa-solid fa-trophy text-yellow-400 text-[11px]"></i>
+        <span>Счет:</span>
+        <span id="scoreCount" class="font-bold text-white">0%</span>
+      </div>
+      <div class="flex items-center gap-1.5 text-slate-500">
+        <span id="progressStep">0 / 0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN INTERACTIVE CANVAS (Synthesia-style Falling Notes Waterfall) -->
+  <main class="flex-1 relative w-full overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+    <!-- Background grid lines for keys -->
+    <canvas id="fallingNotesCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+    
+    <!-- Metronome pulse indicator dot -->
+    <div id="metronomePulse" class="absolute top-4 right-5 w-4 h-4 rounded-full bg-slate-700/50 border border-slate-600 transition-all duration-75 pointer-events-none"></div>
+
+    <!-- Floating Feedback layer -->
+    <div id="feedbackLayer" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+  </main>
+
+  <!-- KEYBOARD TOOLBAR (Octave Shift & Touch Zoom) -->
+  <div class="flex-none bg-slate-900/80 px-4 py-1 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+    <div class="flex items-center gap-2">
+      <span class="text-[11px] font-medium text-slate-500 hidden sm:inline">Диапазон:</span>
+      <button id="btnOctaveDown" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 active:scale-95 transition">
+        <i class="fa-solid fa-chevron-left text-[10px]"></i> Сдвиг влево
+      </button>
+      <span id="octaveRangeText" class="font-mono text-slate-300 font-semibold text-[11px]">C3 - C6 (3 окт.)</span>
+      <button id="btnOctaveUp" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 active:scale-95 transition">
+        Сдвиг вправо <i class="fa-solid fa-chevron-right text-[10px]"></i>
+      </button>
+    </div>
+
+    <!-- Key size zoom for tablet fingers -->
+    <div class="flex items-center gap-2">
+      <span class="text-[11px] font-medium text-slate-500 hidden sm:inline">Ширина клавиш:</span>
+      <button id="btnZoomOut" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs" title="Уменьшить клавиши">-</button>
+      <button id="btnZoomIn" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs" title="Увеличить клавиши">+</button>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE PIANO KEYBOARD -->
+  <footer class="flex-none bg-slate-950 pb-2 pt-1 border-t-2 border-violet-900/40 relative shadow-2xl">
+    <div class="relative w-full overflow-x-auto overflow-y-hidden no-scrollbar px-2" id="keyboardContainer">
+      <div id="pianoKeyboard" class="relative mx-auto flex select-none touch-none h-44 sm:h-52 md:h-56 pb-2">
+        <!-- Клавиши генерируются динамически JS -->
+      </div>
+    </div>
+  </footer>
+
+  <!-- SONG SELECTION MODAL (LIBRARY OF 20 CLASSICS) -->
+  <div id="songModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-6 transition-all duration-200 opacity-0">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden ring-1 ring-white/10">
+      
+      <!-- Modal Header -->
+      <div class="p-4 sm:p-6 border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-display font-bold text-white flex items-center gap-2.5">
+            <i class="fa-solid fa-book-bookmark text-violet-400"></i> Библиотека классических шедевров
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">20 легендарных мелодий с аппликатурой пальцев и интерактивным обучением</p>
+        </div>
+        <button id="btnCloseModal" class="w-10 h-10 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Filters & Search -->
+      <div class="p-4 bg-slate-900/50 border-b border-slate-800 flex flex-wrap gap-2.5 items-center justify-between">
+        <div class="relative flex-1 min-w-[200px]">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+          <input type="text" id="songSearchInput" placeholder="Поиск композитора или названия..." class="w-full bg-slate-950/80 border border-slate-800 text-white rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm focus:outline-none focus:border-violet-500 placeholder-slate-500 transition">
+        </div>
+        <div class="flex gap-1.5" id="difficultyFilterButtons">
+          <button data-diff="all" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-violet-600 text-white filter-btn transition">Все</button>
+          <button data-diff="Easy" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white filter-btn transition">Легкие</button>
+          <button data-diff="Medium" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white filter-btn transition">Средние</button>
+          <button data-diff="Hard" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white filter-btn transition">Сложные</button>
+        </div>
+      </div>
+
+      <!-- Songs List Grid -->
+      <div id="songsListContainer" class="p-4 sm:p-6 overflow-y-auto space-y-2.5 flex-1">
+        <!-- Динамический список 20 произведений -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 bg-slate-950/60 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+        <span>Совет: для медленного разбора используйте режим <b class="text-violet-300">«Ждать меня»</b> и темп 50%.</span>
+        <button id="btnCloseModalBottom" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium transition">Закрыть</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    /* =====================================================================
+       1. БИБЛИОТЕКА 20 КЛАССИЧЕСКИХ МЕЛОДИЙ С ТОЧНЫМИ НОТАМИ И АППЛИКАТУРОЙ
+       ===================================================================== */
+    // Note naming system: Pitch standard C3 to C6, durations in beats, finger: 1 (thumb) to 5 (pinky)
+    const SONGS_DB = [
+      {
+        id: 'fur_elise',
+        title: 'Für Elise (К Элизе)',
+        composer: 'Ludwig van Beethoven',
+        difficulty: 'Easy',
+        defaultBpm: 128,
+        description: 'Культовая багатель ля-минор. Идеально подходит для отработки чередования пальцев 1-5.',
+        notes: [
+          { pitch: 'E5', duration: 0.5, finger: 5 },
+          { pitch: 'D#5', duration: 0.5, finger: 4 },
+          { pitch: 'E5', duration: 0.5, finger: 5 },
+          { pitch: 'D#5', duration: 0.5, finger: 4 },
+          { pitch: 'E5', duration: 0.5, finger: 5 },
+          { pitch: 'B4', duration: 0.5, finger: 2 },
+          { pitch: 'D5', duration: 0.5, finger: 4 },
+          { pitch: 'C5', duration: 0.5, finger: 3 },
+          { pitch: 'A4', duration: 1.0, finger: 1 },
+          { pitch: 'C4', duration: 0.5, finger: 1 },
+          { pitch: 'E4', duration: 0.5, finger: 2 },
+          { pitch: 'A4', duration: 0.5, finger: 4 },
+          { pitch: 'B4', duration: 1.0, finger: 5 },
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'B4', duration: 0.5, finger: 4 },
+          { pitch: 'C5', duration: 1.0, finger: 5 },
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'E5', duration: 0.5, finger: 5 },
+          { pitch: 'D#5', duration: 0.5, finger: 4 },
+          { pitch: 'E5', duration: 0.5, finger: 5 },
+          { pitch: 'D#5', duration: 0.5, finger: 4 },
+          { pitch: 'E5', duration: 0.5, finger: 5 },
+          { pitch: 'B4', duration: 0.5, finger: 2 },
+          { pitch: 'D5', duration: 0.5, finger: 4 },
+          { pitch: 'C5', duration: 0.5, finger: 3 },
+          { pitch: 'A4', duration: 1.5, finger: 1 }
+        ]
+      },
+      {
+        id: 'ode_to_joy',
+        title: 'Ода к радости (Симфония №9)',
+        composer: 'Ludwig van Beethoven',
+        difficulty: 'Easy',
+        defaultBpm: 120,
+        description: 'Главный гимн человечества. Простая плавная мелодия для уверенного старта новичка.',
+        notes: [
+          { pitch: 'E4', duration: 1, finger: 3 },
+          { pitch: 'E4', duration: 1, finger: 3 },
+          { pitch: 'F4', duration: 1, finger: 4 },
+          { pitch: 'G4', duration: 1, finger: 5 },
+          { pitch: 'G4', duration: 1, finger: 5 },
+          { pitch: 'F4', duration: 1, finger: 4 },
+          { pitch: 'E4', duration: 1, finger: 3 },
+          { pitch: 'D4', duration: 1, finger: 2 },
+          { pitch: 'C4', duration: 1, finger: 1 },
+          { pitch: 'C4', duration: 1, finger: 1 },
+          { pitch: 'D4', duration: 1, finger: 2 },
+          { pitch: 'E4', duration: 1, finger: 3 },
+          { pitch: 'E4', duration: 1.5, finger: 3 },
+          { pitch: 'D4', duration: 0.5, finger: 2 },
+          { pitch: 'D4', duration: 2, finger: 2 },
+          { pitch: 'E4', duration: 1, finger: 3 },
+          { pitch: 'E4', duration: 1, finger: 3 },
+          { pitch: 'F4', duration: 1, finger: 4 },
+          { pitch: 'G4', duration: 1, finger: 5 },
+          { pitch: 'G4', duration: 1, finger: 5 },
+          { pitch: 'F4', duration: 1, finger: 4 },
+          { pitch: 'E4', duration: 1, finger: 3 },
+          { pitch: 'D4', duration: 1, finger: 2 },
+          { pitch: 'C4', duration: 1, finger: 1 },
+          { pitch: 'C4', duration: 1, finger: 1 },
+          { pitch: 'D4', duration: 1, finger: 2 },
+          { pitch: 'E4', duration: 1, finger: 3 },
+          { pitch: 'D4', duration: 1.5, finger: 2 },
+          { pitch: 'C4', duration: 0.5, finger: 1 },
+          { pitch: 'C4', duration: 2, finger: 1 }
+        ]
+      },
+      {
+        id: 'turkish_march',
+        title: 'Турецкий марш (Rondo alla Turca)',
+        composer: 'Wolfgang Amadeus Mozart',
+        difficulty: 'Hard',
+        defaultBpm: 125,
+        description: 'Блестящее виртуозное рондо, развивающее беглость пальцев и мелкую технику.',
+        notes: [
+          { pitch: 'B4', duration: 0.5, finger: 1 },
+          { pitch: 'A4', duration: 0.5, finger: 2 },
+          { pitch: 'G#4', duration: 0.5, finger: 1 },
+          { pitch: 'A4', duration: 0.5, finger: 2 },
+          { pitch: 'C5', duration: 1.0, finger: 4 },
+          { pitch: 'D5', duration: 0.5, finger: 1 },
+          { pitch: 'C5', duration: 0.5, finger: 2 },
+          { pitch: 'B4', duration: 0.5, finger: 1 },
+          { pitch: 'C5', duration: 0.5, finger: 2 },
+          { pitch: 'E5', duration: 1.0, finger: 5 },
+          { pitch: 'F5', duration: 0.5, finger: 4 },
+          { pitch: 'E5', duration: 0.5, finger: 3 },
+          { pitch: 'D#5', duration: 0.5, finger: 2 },
+          { pitch: 'E5', duration: 0.5, finger: 3 },
+          { pitch: 'B5', duration: 0.5, finger: 5 },
+          { pitch: 'A5', duration: 0.5, finger: 4 },
+          { pitch: 'G#5', duration: 0.5, finger: 3 },
+          { pitch: 'A5', duration: 0.5, finger: 4 },
+          { pitch: 'B5', duration: 1.0, finger: 5 },
+          { pitch: 'A5', duration: 1.5, finger: 4 }
+        ]
+      },
+      {
+        id: 'serenade',
+        title: 'Маленькая ночная серенада',
+        composer: 'Wolfgang Amadeus Mozart',
+        difficulty: 'Medium',
+        defaultBpm: 130,
+        description: 'Жизнерадостная классика венского симфонизма с бодрыми арпеджио.',
+        notes: [
+          { pitch: 'G4', duration: 1.5, finger: 1 },
+          { pitch: 'D4', duration: 0.5, finger: 1 },
+          { pitch: 'G4', duration: 1.0, finger: 3 },
+          { pitch: 'D4', duration: 1.0, finger: 1 },
+          { pitch: 'G4', duration: 0.5, finger: 3 },
+          { pitch: 'B4', duration: 0.5, finger: 4 },
+          { pitch: 'D5', duration: 1.5, finger: 5 },
+          { pitch: 'C5', duration: 1.5, finger: 4 },
+          { pitch: 'A4', duration: 0.5, finger: 2 },
+          { pitch: 'C5', duration: 1.0, finger: 4 },
+          { pitch: 'A4', duration: 1.0, finger: 2 },
+          { pitch: 'F#4', duration: 0.5, finger: 1 },
+          { pitch: 'A4', duration: 0.5, finger: 2 },
+          { pitch: 'D4', duration: 1.5, finger: 1 }
+        ]
+      },
+      {
+        id: 'bach_minuet',
+        title: 'Менуэт соль мажор (BWV Anh. 114)',
+        composer: 'Johann Sebastian Bach / Petzold',
+        difficulty: 'Easy',
+        defaultBpm: 110,
+        description: 'Знаменитый полифонический менуэт из «Нотной тетради Анны Магдалены Бах».',
+        notes: [
+          { pitch: 'D5', duration: 1.0, finger: 5 },
+          { pitch: 'G4', duration: 0.5, finger: 1 },
+          { pitch: 'A4', duration: 0.5, finger: 2 },
+          { pitch: 'B4', duration: 0.5, finger: 3 },
+          { pitch: 'C5', duration: 0.5, finger: 4 },
+          { pitch: 'D5', duration: 1.0, finger: 5 },
+          { pitch: 'G4', duration: 1.0, finger: 1 },
+          { pitch: 'G4', duration: 1.0, finger: 1 },
+          { pitch: 'E5', duration: 1.0, finger: 5 },
+          { pitch: 'C5', duration: 0.5, finger: 3 },
+          { pitch: 'D5', duration: 0.5, finger: 4 },
+          { pitch: 'E5', duration: 0.5, finger: 5 },
+          { pitch: 'F#5', duration: 0.5, finger: 4 },
+          { pitch: 'G5', duration: 1.0, finger: 5 },
+          { pitch: 'G4', duration: 1.0, finger: 1 }
+        ]
+      },
+      {
+        id: 'bach_prelude',
+        title: 'Прелюдия до мажор (BWV 846)',
+        composer: 'Johann Sebastian Bach',
+        difficulty: 'Medium',
+        defaultBpm: 95,
+        description: 'Медитативные волны гармонии из «Хорошо темперированного клавира».',
+        notes: [
+          { pitch: 'C4', duration: 0.5, finger: 1 },
+          { pitch: 'E4', duration: 0.5, finger: 2 },
+          { pitch: 'G4', duration: 0.5, finger: 3 },
+          { pitch: 'C5', duration: 0.5, finger: 5 },
+          { pitch: 'E5', duration: 0.5, finger: 4 },
+          { pitch: 'G4', duration: 0.5, finger: 3 },
+          { pitch: 'C5', duration: 0.5, finger: 5 },
+          { pitch: 'E5', duration: 0.5, finger: 4 },
+          { pitch: 'C4', duration: 0.5, finger: 1 },
+          { pitch: 'D4', duration: 0.5, finger: 2 },
+          { pitch: 'A4', duration: 0.5, finger: 3 },
+          { pitch: 'D5', duration: 0.5, finger: 5 },
+          { pitch: 'F5', duration: 0.5, finger: 4 },
+          { pitch: 'A4', duration: 0.5, finger: 3 },
+          { pitch: 'D5', duration: 0.5, finger: 5 },
+          { pitch: 'F5', duration: 0.5, finger: 4 }
+        ]
+      },
+      {
+        id: 'chopin_nocturne',
+        title: 'Ноктюрн ми-бемоль мажор (Op. 9 No. 2)',
+        composer: 'Frédéric Chopin',
+        difficulty: 'Hard',
+        defaultBpm: 80,
+        description: 'Вершина романтической лирики, требующая певучего звукоизвлечения (cantabile).',
+        notes: [
+          { pitch: 'G4', duration: 0.5, finger: 1 },
+          { pitch: 'G4', duration: 1.0, finger: 2 },
+          { pitch: 'F4', duration: 0.5, finger: 1 },
+          { pitch: 'G4', duration: 0.5, finger: 2 },
+          { pitch: 'D#5', duration: 1.5, finger: 5 },
+          { pitch: 'D5', duration: 0.5, finger: 4 },
+          { pitch: 'C5', duration: 1.0, finger: 3 },
+          { pitch: 'Bb4', duration: 1.0, finger: 2 },
+          { pitch: 'G4', duration: 1.0, finger: 1 },
+          { pitch: 'F4', duration: 1.5, finger: 2 },
+          { pitch: 'Eb4', duration: 2.0, finger: 1 }
+        ]
+      },
+      {
+        id: 'sugar_plum_fairy',
+        title: 'Танец Феи Драже (Щелкунчик)',
+        composer: 'Pyotr Ilyich Tchaikovsky',
+        difficulty: 'Medium',
+        defaultBpm: 115,
+        description: 'Волшебное хрустальное звучание челесты в фортепианном переложении.',
+        notes: [
+          { pitch: 'B4', duration: 0.5, finger: 3 },
+          { pitch: 'E5', duration: 0.5, finger: 5 },
+          { pitch: 'B4', duration: 0.5, finger: 3 },
+          { pitch: 'G4', duration: 0.5, finger: 1 },
+          { pitch: 'F#4', duration: 0.5, finger: 2 },
+          { pitch: 'B4', duration: 0.5, finger: 4 },
+          { pitch: 'E4', duration: 1.0, finger: 1 },
+          { pitch: 'B4', duration: 0.5, finger: 3 },
+          { pitch: 'D#5', duration: 0.5, finger: 5 },
+          { pitch: 'B4', duration: 0.5, finger: 3 },
+          { pitch: 'F#4', duration: 0.5, finger: 1 },
+          { pitch: 'G4', duration: 0.5, finger: 2 },
+          { pitch: 'B4', duration: 0.5, finger: 4 },
+          { pitch: 'E4', duration: 1.5, finger: 1 }
+        ]
+      },
+      {
+        id: 'swan_lake',
+        title: 'Тема Лебединого озера',
+        composer: 'Pyotr Ilyich Tchaikovsky',
+        difficulty: 'Medium',
+        defaultBpm: 100,
+        description: 'Грустная и возвышенная мелодия гобоя, покорившая театры всего мира.',
+        notes: [
+          { pitch: 'B4', duration: 1.5, finger: 3 },
+          { pitch: 'E5', duration: 1.0, finger: 5 },
+          { pitch: 'F#5', duration: 0.5, finger: 4 },
+          { pitch: 'G5', duration: 1.0, finger: 5 },
+          { pitch: 'F#5', duration: 0.5, finger: 4 },
+          { pitch: 'E5', duration: 1.0, finger: 3 },
+          { pitch: 'D5', duration: 0.5, finger: 2 },
+          { pitch: 'C5', duration: 1.0, finger: 1 },
+          { pitch: 'B4', duration: 2.0, finger: 2 }
+        ]
+      },
+      {
+        id: 'spring_vivaldi',
+        title: 'Времена года: Весна',
+        composer: 'Antonio Vivaldi',
+        difficulty: 'Easy',
+        defaultBpm: 120,
+        description: 'Ликующий барочный мотив пробуждения природы от зимнего сна.',
+        notes: [
+          { pitch: 'E4', duration: 1.0, finger: 1 },
+          { pitch: 'G#4', duration: 1.0, finger: 3 },
+          { pitch: 'G#4', duration: 1.0, finger: 3 },
+          { pitch: 'G#4', duration: 0.5, finger: 3 },
+          { pitch: 'F#4', duration: 0.5, finger: 2 },
+          { pitch: 'E4', duration: 1.0, finger: 1 },
+          { pitch: 'B4', duration: 1.5, finger: 5 },
+          { pitch: 'G#4', duration: 1.0, finger: 3 },
+          { pitch: 'G#4', duration: 1.0, finger: 3 },
+          { pitch: 'F#4', duration: 0.5, finger: 2 },
+          { pitch: 'E4', duration: 1.5, finger: 1 }
+        ]
+      },
+      {
+        id: 'brahms_lullaby',
+        title: 'Колыбельная Брамса (Wiegenlied)',
+        composer: 'Johannes Brahms',
+        difficulty: 'Easy',
+        defaultBpm: 88,
+        description: 'Самая узнаваемая и нежная колыбельная в истории классической музыки.',
+        notes: [
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'G4', duration: 1.5, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'G4', duration: 1.5, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'G4', duration: 0.5, finger: 3 },
+          { pitch: 'C5', duration: 1.0, finger: 5 },
+          { pitch: 'B4', duration: 0.5, finger: 4 },
+          { pitch: 'A4', duration: 0.5, finger: 3 },
+          { pitch: 'A4', duration: 1.0, finger: 3 },
+          { pitch: 'G4', duration: 1.5, finger: 2 }
+        ]
+      },
+      {
+        id: 'canon_in_d',
+        title: 'Канон в ре мажор',
+        composer: 'Johann Pachelbel',
+        difficulty: 'Medium',
+        defaultBpm: 90,
+        description: 'Величественная и гармонически безупречная полифония барокко.',
+        notes: [
+          { pitch: 'F#4', duration: 1.0, finger: 3 },
+          { pitch: 'E4', duration: 1.0, finger: 2 },
+          { pitch: 'D4', duration: 1.0, finger: 1 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'B3', duration: 1.0, finger: 1 },
+          { pitch: 'A3', duration: 1.0, finger: 1 },
+          { pitch: 'B3', duration: 1.0, finger: 2 },
+          { pitch: 'C#4', duration: 1.0, finger: 3 },
+          { pitch: 'D4', duration: 0.5, finger: 1 },
+          { pitch: 'F#4', duration: 0.5, finger: 3 },
+          { pitch: 'A4', duration: 0.5, finger: 5 },
+          { pitch: 'G4', duration: 0.5, finger: 4 },
+          { pitch: 'F#4', duration: 1.5, finger: 3 }
+        ]
+      },
+      {
+        id: 'clair_de_lune',
+        title: 'Лунный свет (Clair de Lune)',
+        composer: 'Claude Debussy',
+        difficulty: 'Hard',
+        defaultBpm: 65,
+        description: 'Жемчужина импрессионизма с таинственными мерцающими красками.',
+        notes: [
+          { pitch: 'F5', duration: 1.5, finger: 5 },
+          { pitch: 'Eb5', duration: 1.5, finger: 4 },
+          { pitch: 'Db5', duration: 1.0, finger: 3 },
+          { pitch: 'C5', duration: 0.5, finger: 2 },
+          { pitch: 'Bb4', duration: 1.5, finger: 1 },
+          { pitch: 'Ab4', duration: 2.0, finger: 2 },
+          { pitch: 'F4', duration: 1.0, finger: 1 },
+          { pitch: 'Ab4', duration: 1.5, finger: 2 },
+          { pitch: 'Db5', duration: 2.5, finger: 4 }
+        ]
+      },
+      {
+        id: 'gymnopedie',
+        title: 'Гимнопедия №1 (Gymnopédie No. 1)',
+        composer: 'Erik Satie',
+        difficulty: 'Easy',
+        defaultBpm: 75,
+        description: 'Атмосферный медитативный минимализм, умиротворяющий с первых аккордов.',
+        notes: [
+          { pitch: 'F#4', duration: 1.5, finger: 2 },
+          { pitch: 'A4', duration: 1.5, finger: 4 },
+          { pitch: 'G4', duration: 1.0, finger: 3 },
+          { pitch: 'F#4', duration: 1.0, finger: 2 },
+          { pitch: 'C#4', duration: 2.0, finger: 1 },
+          { pitch: 'B3', duration: 1.5, finger: 1 },
+          { pitch: 'C#4', duration: 1.0, finger: 2 },
+          { pitch: 'D4', duration: 2.5, finger: 3 }
+        ]
+      },
+      {
+        id: 'mountain_king',
+        title: 'В пещере горного короля',
+        composer: 'Edvard Grieg',
+        difficulty: 'Medium',
+        defaultBpm: 120,
+        description: 'Сюита «Пер Гюнт». Знаменитое ускоряющееся крещендо сказочных троллей.',
+        notes: [
+          { pitch: 'B3', duration: 0.5, finger: 1 },
+          { pitch: 'C#4', duration: 0.5, finger: 2 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'F#4', duration: 0.5, finger: 5 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'F#4', duration: 1.0, finger: 5 },
+          { pitch: 'F4', duration: 0.5, finger: 4 },
+          { pitch: 'C#4', duration: 0.5, finger: 2 },
+          { pitch: 'F4', duration: 1.0, finger: 4 },
+          { pitch: 'E4', duration: 0.5, finger: 3 },
+          { pitch: 'C4', duration: 0.5, finger: 1 },
+          { pitch: 'E4', duration: 1.0, finger: 3 },
+          { pitch: 'B3', duration: 0.5, finger: 1 },
+          { pitch: 'C#4', duration: 0.5, finger: 2 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'F#4', duration: 0.5, finger: 5 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'B4', duration: 1.5, finger: 5 }
+        ]
+      },
+      {
+        id: 'can_can',
+        title: 'Канкан (Орфей в аду)',
+        composer: 'Jacques Offenbach',
+        difficulty: 'Easy',
+        defaultBpm: 140,
+        description: 'Энергичный, вихревой парижский танец, поднимающий настроение.',
+        notes: [
+          { pitch: 'D4', duration: 0.5, finger: 1 },
+          { pitch: 'D4', duration: 0.5, finger: 1 },
+          { pitch: 'D4', duration: 0.5, finger: 1 },
+          { pitch: 'B4', duration: 0.5, finger: 5 },
+          { pitch: 'G4', duration: 1.0, finger: 3 },
+          { pitch: 'G4', duration: 1.0, finger: 3 },
+          { pitch: 'A4', duration: 0.5, finger: 4 },
+          { pitch: 'B4', duration: 0.5, finger: 5 },
+          { pitch: 'C5', duration: 0.5, finger: 5 },
+          { pitch: 'E4', duration: 0.5, finger: 2 },
+          { pitch: 'E4', duration: 1.0, finger: 2 },
+          { pitch: 'C5', duration: 1.0, finger: 5 },
+          { pitch: 'B4', duration: 0.5, finger: 4 },
+          { pitch: 'A4', duration: 0.5, finger: 3 },
+          { pitch: 'G4', duration: 1.5, finger: 2 }
+        ]
+      },
+      {
+        id: 'ave_maria',
+        title: 'Ave Maria',
+        composer: 'Franz Schubert',
+        difficulty: 'Medium',
+        defaultBpm: 72,
+        description: 'Возвышенная сакральная молитва с выразительными задержаниями.',
+        notes: [
+          { pitch: 'C4', duration: 1.0, finger: 1 },
+          { pitch: 'E4', duration: 1.0, finger: 2 },
+          { pitch: 'G4', duration: 1.5, finger: 3 },
+          { pitch: 'C5', duration: 1.5, finger: 5 },
+          { pitch: 'B4', duration: 0.5, finger: 4 },
+          { pitch: 'A4', duration: 1.0, finger: 3 },
+          { pitch: 'G4', duration: 2.0, finger: 2 },
+          { pitch: 'F4', duration: 0.5, finger: 1 },
+          { pitch: 'G4', duration: 0.5, finger: 2 },
+          { pitch: 'A4', duration: 1.5, finger: 3 },
+          { pitch: 'D4', duration: 2.0, finger: 1 }
+        ]
+      },
+      {
+        id: 'blue_danube',
+        title: 'На прекрасном голубом Дунае',
+        composer: 'Johann Strauss II',
+        difficulty: 'Easy',
+        defaultBpm: 125,
+        description: 'Король венских вальсов. Плавное покачивание в трехдольном размере.',
+        notes: [
+          { pitch: 'D4', duration: 1.0, finger: 1 },
+          { pitch: 'D4', duration: 1.0, finger: 1 },
+          { pitch: 'F#4', duration: 1.0, finger: 2 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'A4', duration: 2.0, finger: 4 },
+          { pitch: 'F#5', duration: 2.0, finger: 5 },
+          { pitch: 'F#5', duration: 1.0, finger: 5 },
+          { pitch: 'D4', duration: 1.0, finger: 1 },
+          { pitch: 'D4', duration: 1.0, finger: 1 },
+          { pitch: 'F#4', duration: 1.0, finger: 2 },
+          { pitch: 'A4', duration: 1.0, finger: 4 },
+          { pitch: 'A4', duration: 2.0, finger: 4 },
+          { pitch: 'E5', duration: 2.0, finger: 5 }
+        ]
+      },
+      {
+        id: 'liebestraum',
+        title: 'Грёзы любви (Liebestraum No. 3)',
+        composer: 'Franz Liszt',
+        difficulty: 'Hard',
+        defaultBpm: 75,
+        description: 'Шедевр пианистической экспрессии и певучего ноктюрна Ференца Листа.',
+        notes: [
+          { pitch: 'Ab4', duration: 1.5, finger: 2 },
+          { pitch: 'C5', duration: 1.5, finger: 4 },
+          { pitch: 'Eb5', duration: 2.0, finger: 5 },
+          { pitch: 'D5', duration: 0.5, finger: 4 },
+          { pitch: 'Db5', duration: 1.5, finger: 3 },
+          { pitch: 'C5', duration: 0.5, finger: 2 },
+          { pitch: 'Bb4', duration: 1.5, finger: 1 },
+          { pitch: 'Ab4', duration: 2.5, finger: 2 }
+        ]
+      },
+      {
+        id: 'william_tell',
+        title: 'Увертюра «Вильгельм Телль»',
+        composer: 'Gioachino Rossini',
+        difficulty: 'Medium',
+        defaultBpm: 145,
+        description: 'Стремительный, энергичный галоп, захватывающий дух с первых тактов.',
+        notes: [
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'E4', duration: 0.25, finger: 1 },
+          { pitch: 'E4', duration: 0.25, finger: 1 },
+          { pitch: 'E4', duration: 0.5, finger: 1 },
+          { pitch: 'G4', duration: 0.5, finger: 3 },
+          { pitch: 'C5', duration: 0.5, finger: 5 },
+          { pitch: 'E5', duration: 0.5, finger: 5 },
+          { pitch: 'D5', duration: 0.25, finger: 4 },
+          { pitch: 'C5', duration: 0.25, finger: 3 },
+          { pitch: 'B4', duration: 0.5, finger: 2 },
+          { pitch: 'C5', duration: 0.5, finger: 3 },
+          { pitch: 'G4', duration: 1.0, finger: 1 }
+        ]
+      }
+    ];
+
+    /* =====================================================================
+       2. НОТНАЯ ТЕОРИЯ, ЧАСТОТЫ И ПЕРЕВОД НОТ
+       ===================================================================== */
+    const NOTE_NAMES_LATIN = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const NOTE_NAMES_SOLFEGE = {
+      'C': 'До', 'C#': 'До♯', 'Db': 'Ре♭',
+      'D': 'Ре', 'D#': 'Ре♯', 'Eb': 'Ми♭',
+      'E': 'Ми',
+      'F': 'Фа', 'F#': 'Фа♯', 'Gb': 'Соль♭',
+      'G': 'Соль', 'G#': 'Соль♯', 'Ab': 'Ля♭',
+      'A': 'Ля', 'A#': 'Ля♯', 'Bb': 'Си♭',
+      'B': 'Си'
+    };
+
+    // Нормализация бемолей в диезы для простоты сравнения
+    function normalizePitch(pitch) {
+      return pitch.replace('Db', 'C#')
+                  .replace('Eb', 'D#')
+                  .replace('Gb', 'F#')
+                  .replace('Ab', 'G#')
+                  .replace('Bb', 'A#');
+    }
+
+    // Расчет частоты в Гц (A4 = 440 Hz)
+    function pitchToFrequency(pitch) {
+      const clean = normalizePitch(pitch);
+      const note = clean.slice(0, -1);
+      const octave = parseInt(clean.slice(-1), 10);
+      const semitoneIndex = NOTE_NAMES_LATIN.indexOf(note);
+      if (semitoneIndex === -1) return 440;
+      // Номер полутона относительно C0:
+      const semitoneNumber = octave * 12 + semitoneIndex;
+      // A4 = 440Гц (A4: octave 4, note index 9 => 48 + 9 = 57)
+      return 440 * Math.pow(2, (semitoneNumber - 57) / 12);
+    }
+
+    /* =====================================================================
+       3. ВЫСОКОТОЧНЫЙ ПОЛИФОНИЧЕСКИЙ ЗВУКОВОЙ ДВИЖОК (WEB AUDIO API)
+       ===================================================================== */
+    class PianoAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.sustain = false;
+        this.activeVoices = new Map();
+        this.masterGain = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContextClass();
+          this.masterGain = this.ctx.createGain();
+          this.masterGain.gain.setValueAtTime(0.85, this.ctx.currentTime);
+          this.masterGain.connect(this.ctx.destination);
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playNote(pitch, durationSec = 1.0) {
+        this.init();
+        const freq = pitchToFrequency(pitch);
+        const now = this.ctx.currentTime;
+
+        // Создаем богатый гармонический тембр фортепиано (3 осциллятора с обертонами)
+        const voiceGain = this.ctx.createGain();
+        voiceGain.connect(this.masterGain);
+
+        // Основной тон (синус + легкая треугольная волна для теплоты)
+        const osc1 = this.ctx.createOscillator();
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(freq, now);
+
+        const osc2 = this.ctx.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(freq * 2, now); // Вторая гармоника
+
+        const osc3 = this.ctx.createOscillator();
+        osc3.type = 'sine';
+        osc3.frequency.setValueAtTime(freq * 3, now); // Третья гармоника
+
+        const osc2Gain = this.ctx.createGain();
+        osc2Gain.gain.setValueAtTime(0.25, now);
+        const osc3Gain = this.ctx.createGain();
+        osc3Gain.gain.setValueAtTime(0.1, now);
+
+        osc1.connect(voiceGain);
+        osc2.connect(osc2Gain);
+        osc2Gain.connect(voiceGain);
+        osc3.connect(osc3Gain);
+        osc3Gain.connect(voiceGain);
+
+        // Фортепианная огибающая ADSR (быстрая атака, естественный спад)
+        const decayTime = this.sustain ? Math.max(durationSec * 2.5, 3.0) : Math.max(durationSec, 1.2);
+        voiceGain.gain.setValueAtTime(0.0001, now);
+        voiceGain.gain.linearRampToValueAtTime(0.9, now + 0.006); // мгновенный удар молоточка
+        voiceGain.gain.exponentialRampToValueAtTime(0.25, now + 0.25);
+        voiceGain.gain.exponentialRampToValueAtTime(0.0001, now + decayTime);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc3.start(now);
+
+        const stopTime = now + decayTime + 0.1;
+        osc1.stop(stopTime);
+        osc2.stop(stopTime);
+        osc3.stop(stopTime);
+
+        // Отслеживаем звучащий голос
+        this.activeVoices.set(pitch, { voiceGain, stopTime });
+      }
+
+      playMetronomeClick() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.04);
+
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+    }
+
+    const audio = new PianoAudioEngine();
+
+    /* =====================================================================
+       4. СОСТОЯНИЕ ТРЕНАЖЕРА (STATE MANAGEMENT)
+       ===================================================================== */
+    const state = {
+      currentSongIndex: 0,
+      mode: 'wait', // 'wait' | 'flow' | 'listen'
+      isPlaying: false,
+      tempoMultiplier: 1.0, // 0.25x до 1.5x
+      sustainEnabled: false,
+      metronomeEnabled: false,
+      labelMode: 'solfege', // 'solfege' (До, Ре) | 'latin' (C, D) | 'off'
+      octaveStart: 3, // C3
+      octavesCount: 3, // C3 - B5 (3 полных октавы)
+      keyBaseWidth: 44, // ширина белой клавиши в пикселях
+      
+      // Игровой прогресс песни
+      currentNoteIndex: 0,
+      songStartTime: 0,
+      songTimer: null,
+      score: 0,
+      streak: 0,
+      totalNotesInSong: 0,
+      
+      // Временные метки нот для падающего водопада (Waterfall)
+      timelineNotes: []
+    };
+
+    /* =====================================================================
+       5. КЛАВИАТУРА ПИАНИНО: ГЕНЕРАЦИЯ И СЕНСОРНОЕ УПРАВЛЕНИЕ (MULTITOUCH)
+       ===================================================================== */
+    const pianoKeyboardEl = document.getElementById('pianoKeyboard');
+    const keyboardContainerEl = document.getElementById('keyboardContainer');
+
+    function buildKeyboard() {
+      pianoKeyboardEl.innerHTML = '';
+      const startOct = state.octaveStart;
+      const endOct = state.octaveStart + state.octavesCount - 1;
+
+      // Обновляем текст диапазона
+      document.getElementById('octaveRangeText').textContent = `C${startOct} - C${endOct + 1} (${state.octavesCount} окт.)`;
+
+      // Генерируем массив клавиш по порядку
+      let whiteKeyOffset = 0;
+      const whiteWidth = state.keyBaseWidth;
+      const blackWidth = Math.round(whiteWidth * 0.62);
+      const blackHeight = '60%';
+
+      for (let oct = startOct; oct <= endOct; oct++) {
+        for (let i = 0; i < 12; i++) {
+          const noteName = NOTE_NAMES_LATIN[i];
+          const pitch = `${noteName}${oct}`;
+          const isBlack = noteName.includes('#');
+
+          const keyBtn = document.createElement('div');
+          keyBtn.dataset.pitch = pitch;
+
+          if (!isBlack) {
+            // Белая клавиша
+            keyBtn.className = 'key-white relative rounded-b-xl border border-slate-300 flex flex-col justify-end items-center pb-2 select-none cursor-pointer text-slate-700 font-bold shrink-0';
+            keyBtn.style.width = `${whiteWidth}px`;
+            keyBtn.style.zIndex = '1';
+
+            // Лейбл ноты
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'key-label text-[11px] pointer-events-none tracking-tight';
+            labelSpan.dataset.basePitch = pitch;
+            keyBtn.appendChild(labelSpan);
+
+            // Буквенная подсказка пальца/клавиши
+            const fingerSpan = document.createElement('span');
+            fingerSpan.className = 'key-finger-hint hidden mb-1 w-5 h-5 rounded-full bg-violet-600 text-white text-[10px] items-center justify-center font-bold pointer-events-none shadow';
+            keyBtn.appendChild(fingerSpan);
+
+            pianoKeyboardEl.appendChild(keyBtn);
+            whiteKeyOffset++;
+          } else {
+            // Черная клавиша (абсолютное позиционирование поверх предыдущей белой)
+            keyBtn.className = 'key-black absolute rounded-b-lg flex flex-col justify-end items-center pb-1.5 select-none cursor-pointer text-white font-semibold';
+            keyBtn.style.width = `${blackWidth}px`;
+            keyBtn.style.height = blackHeight;
+            keyBtn.style.zIndex = '5';
+            // Позиция: край предыдущей белой клавиши минус половина черной
+            const leftPos = (whiteKeyOffset * whiteWidth) - (blackWidth / 2);
+            keyBtn.style.left = `${leftPos}px`;
+
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'key-label text-[9px] text-slate-300 pointer-events-none';
+            labelSpan.dataset.basePitch = pitch;
+            keyBtn.appendChild(labelSpan);
+
+            const fingerSpan = document.createElement('span');
+            fingerSpan.className = 'key-finger-hint hidden mb-1 w-4 h-4 rounded-full bg-amber-500 text-slate-900 text-[9px] items-center justify-center font-bold pointer-events-none shadow';
+            keyBtn.appendChild(fingerSpan);
+
+            pianoKeyboardEl.appendChild(keyBtn);
+          }
+        }
+      }
+
+      // Завершающая нота C верхней октавы для гармоничного вида
+      const lastPitch = `C${endOct + 1}`;
+      const lastKey = document.createElement('div');
+      lastKey.dataset.pitch = lastPitch;
+      lastKey.className = 'key-white relative rounded-b-xl border border-slate-300 flex flex-col justify-end items-center pb-2 select-none cursor-pointer text-slate-700 font-bold shrink-0';
+      lastKey.style.width = `${whiteWidth}px`;
+      lastKey.style.zIndex = '1';
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'key-label text-[11px] pointer-events-none';
+      labelSpan.dataset.basePitch = lastPitch;
+      lastKey.appendChild(labelSpan);
+      pianoKeyboardEl.appendChild(lastKey);
+
+      // Обновляем надписи на клавишах
+      updateKeyLabels();
+      setupKeyListeners();
+    }
+
+    function updateKeyLabels() {
+      const labels = pianoKeyboardEl.querySelectorAll('.key-label');
+      labels.forEach(lbl => {
+        const pitch = lbl.dataset.basePitch;
+        const norm = normalizePitch(pitch);
+        const noteOnly = norm.replace(/\d/, '');
+        const octOnly = norm.match(/\d/)[0];
+
+        if (state.labelMode === 'solfege') {
+          lbl.textContent = NOTE_NAMES_SOLFEGE[noteOnly] || noteOnly;
+        } else if (state.labelMode === 'latin') {
+          lbl.textContent = `${noteOnly}${octOnly}`;
+        } else {
+          lbl.textContent = '';
+        }
+      });
+    }
+
+    /* Обработка мультитач и кликов */
+    const currentlyActivePitches = new Set();
+
+    function pressKeyVisualAndSound(pitch, isUserHit = true) {
+      const norm = normalizePitch(pitch);
+      audio.playNote(norm);
+
+      // Визуальная подсветка клавиши
+      const keyEl = pianoKeyboardEl.querySelector(`[data-pitch="${norm}"]`);
+      if (keyEl) {
+        keyEl.classList.add('active');
+      }
+
+      // Если нажатие произвел пользователь во время практики
+      if (isUserHit) {
+        handleUserNoteInput(norm);
+      }
+    }
+
+    function releaseKeyVisual(pitch) {
+      const norm = normalizePitch(pitch);
+      const keyEl = pianoKeyboardEl.querySelector(`[data-pitch="${norm}"]`);
+      if (keyEl) {
+        keyEl.classList.remove('active');
+      }
+    }
+
+    function setupKeyListeners() {
+      const allKeys = pianoKeyboardEl.querySelectorAll('[data-pitch]');
+
+      // Сенсорная поддержка мультитач для планшетов (iPad, Android Tablets)
+      const touchMap = new Map(); // identifier -> pitch
+
+      pianoKeyboardEl.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        audio.init();
+        Array.from(e.changedTouches).forEach(touch => {
+          const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+          const keyEl = elem ? elem.closest('[data-pitch]') : null;
+          if (keyEl) {
+            const pitch = keyEl.dataset.pitch;
+            touchMap.set(touch.identifier, pitch);
+            pressKeyVisualAndSound(pitch, true);
+          }
+        });
+      }, { passive: false });
+
+      pianoKeyboardEl.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        Array.from(e.changedTouches).forEach(touch => {
+          const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+          const keyEl = elem ? elem.closest('[data-pitch]') : null;
+          const oldPitch = touchMap.get(touch.identifier);
+
+          if (keyEl) {
+            const newPitch = keyEl.dataset.pitch;
+            if (oldPitch !== newPitch) {
+              if (oldPitch) releaseKeyVisual(oldPitch);
+              touchMap.set(touch.identifier, newPitch);
+              pressKeyVisualAndSound(newPitch, true);
+            }
+          } else if (oldPitch) {
+            releaseKeyVisual(oldPitch);
+            touchMap.delete(touch.identifier);
+          }
+        });
+      }, { passive: false });
+
+      const handleTouchEnd = (e) => {
+        Array.from(e.changedTouches).forEach(touch => {
+          const oldPitch = touchMap.get(touch.identifier);
+          if (oldPitch) {
+            releaseKeyVisual(oldPitch);
+            touchMap.delete(touch.identifier);
+          }
+        });
+      };
+      pianoKeyboardEl.addEventListener('touchend', handleTouchEnd);
+      pianoKeyboardEl.addEventListener('touchcancel', handleTouchEnd);
+
+      // Мышь для десктопа
+      let isMouseDown = false;
+      allKeys.forEach(k => {
+        k.addEventListener('mousedown', (e) => {
+          isMouseDown = true;
+          pressKeyVisualAndSound(k.dataset.pitch, true);
+        });
+        k.addEventListener('mouseenter', () => {
+          if (isMouseDown) pressKeyVisualAndSound(k.dataset.pitch, true);
+        });
+        k.addEventListener('mouseleave', () => {
+          releaseKeyVisual(k.dataset.pitch);
+        });
+      });
+      window.addEventListener('mouseup', () => {
+        if (isMouseDown) {
+          isMouseDown = false;
+          allKeys.forEach(k => releaseKeyVisual(k.dataset.pitch));
+        }
+      });
+    }
+
+    // Поддержка физической клавиатуры ПК (ряд клавиш)
+    const PC_KEY_MAP = {
+      'z': 'C4', 's': 'C#4', 'x': 'D4', 'd': 'D#4', 'c': 'E4', 'v': 'F4',
+      'g': 'F#4', 'b': 'G4', 'h': 'G#4', 'n': 'A4', 'j': 'A#4', 'm': 'B4',
+      'q': 'C5', '2': 'C#5', 'w': 'D5', '3': 'D#5', 'e': 'E5', 'r': 'F5',
+      '5': 'F#5', 't': 'G5', '6': 'G#5', 'y': 'A5', '7': 'A#5', 'u': 'B5'
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat || e.target.tagName === 'INPUT') return;
+      const key = e.key.toLowerCase();
+      if (PC_KEY_MAP[key]) {
+        pressKeyVisualAndSound(PC_KEY_MAP[key], true);
+      }
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlayPause();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      const key = e.key.toLowerCase();
+      if (PC_KEY_MAP[key]) {
+        releaseKeyVisual(PC_KEY_MAP[key]);
+      }
+    });
+
+    /* =====================================================================
+       6. ДВИЖОК ОБУЧЕНИЯ (WAIT FOR ME, FLOW, AUTOPLAY) И ПАДАЮЩИЙ ВОДОПАД
+       ===================================================================== */
+    const canvas = document.getElementById('fallingNotesCanvas');
+    const ctx = canvas.getContext('2d');
+    let animationFrameId = null;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      buildKeyboard();
+    });
+
+    // Построение таймлайна нот песни для водопада
+    function prepareSongTimeline() {
+      const song = SONGS_DB[state.currentSongIndex];
+      state.totalNotesInSong = song.notes.length;
+      state.timelineNotes = [];
+
+      let currentTimeBeats = 1.0; // отступ перед стартом (1 такт на подготовку)
+      const secPerBeat = (60 / song.defaultBpm) / state.tempoMultiplier;
+
+      song.notes.forEach((n, idx) => {
+        const normPitch = normalizePitch(n.pitch);
+        const startTimeSec = currentTimeBeats * secPerBeat;
+        const durationSec = n.duration * secPerBeat;
+
+        state.timelineNotes.push({
+          index: idx,
+          pitch: normPitch,
+          duration: n.duration,
+          durationSec: durationSec,
+          startTimeSec: startTimeSec,
+          endTimeSec: startTimeSec + durationSec,
+          finger: n.finger,
+          hit: false,
+          missed: false
+        });
+
+        currentTimeBeats += n.duration;
+      });
+
+      updateGuidanceHUD();
+    }
+
+    function updateGuidanceHUD() {
+      const song = SONGS_DB[state.currentSongIndex];
+      const nextNote = song.notes[state.currentNoteIndex];
+
+      const hintNoteEl = document.getElementById('hintNextNote');
+      const hintFingerEl = document.getElementById('hintFinger');
+      const progressEl = document.getElementById('progressStep');
+
+      // Сброс подсказок на клавишах
+      document.querySelectorAll('.target-hint').forEach(el => el.classList.remove('target-hint'));
+      document.querySelectorAll('.key-finger-hint').forEach(el => el.classList.add('hidden'));
+
+      if (nextNote && state.currentNoteIndex < song.notes.length) {
+        const norm = normalizePitch(nextNote.pitch);
+        const noteName = norm.replace(/\d/, '');
+        const displayNote = state.labelMode === 'solfege' ? `${NOTE_NAMES_SOLFEGE[noteName]} (${norm})` : norm;
+        hintNoteEl.textContent = displayNote;
+        hintFingerEl.textContent = nextNote.finger ? `Палец ${nextNote.finger}` : '-';
+        progressEl.textContent = `${state.currentNoteIndex + 1} / ${song.notes.length}`;
+
+        // Подсвечиваем клавишу-мишень на фортепиано
+        const targetKey = pianoKeyboardEl.querySelector(`[data-pitch="${norm}"]`);
+        if (targetKey) {
+          targetKey.classList.add('target-hint');
+          const fingerBadge = targetKey.querySelector('.key-finger-hint');
+          if (fingerBadge && nextNote.finger) {
+            fingerBadge.textContent = nextNote.finger;
+            fingerBadge.classList.remove('hidden');
+            fingerBadge.classList.add('flex');
+          }
+        }
+      } else {
+        hintNoteEl.textContent = 'Готово! 🎉';
+        hintFingerEl.textContent = '✔';
+        progressEl.textContent = `${song.notes.length} / ${song.notes.length}`;
+      }
+    }
+
+    // Реакция на нажатие ноты пользователем
+    function handleUserNoteInput(playedPitch) {
+      const song = SONGS_DB[state.currentSongIndex];
+      if (!song || state.currentNoteIndex >= song.notes.length) return;
+
+      const targetNote = song.notes[state.currentNoteIndex];
+      const normTarget = normalizePitch(targetNote.pitch);
+
+      if (state.mode === 'wait') {
+        // Режим «Ждать меня»: продвигаемся вперед только при правильном нажатии
+        if (playedPitch === normTarget) {
+          triggerHitFeedback(playedPitch, 'ОТЛИЧНО', 'text-emerald-400');
+          state.currentNoteIndex++;
+          state.score += 10;
+          state.streak++;
+          updateScoreDisplay();
+          updateGuidanceHUD();
+
+          if (state.currentNoteIndex >= song.notes.length) {
+            finishSong();
+          }
+        } else {
+          // Ошибка
+          state.streak = 0;
+          triggerHitFeedback(playedPitch, 'МИМО', 'text-rose-400');
+          updateScoreDisplay();
+        }
+      } else if (state.mode === 'flow') {
+        // Режим «Поток»: проверка попадания в текущую активную падающую ноту
+        if (playedPitch === normTarget) {
+          triggerHitFeedback(playedPitch, 'В ТОЧКУ!', 'text-emerald-400');
+          state.score += 10;
+          state.streak++;
+          state.currentNoteIndex++;
+        } else {
+          state.streak = 0;
+          triggerHitFeedback(playedPitch, 'ОШИБКА', 'text-rose-400');
+        }
+        updateScoreDisplay();
+        updateGuidanceHUD();
+      }
+    }
+
+    function triggerHitFeedback(pitch, text, colorClass) {
+      const keyEl = pianoKeyboardEl.querySelector(`[data-pitch="${pitch}"]`);
+      if (!keyEl) return;
+
+      const rect = keyEl.getBoundingClientRect();
+      const popup = document.createElement('div');
+      popup.className = `hit-popup fixed font-display font-black text-sm z-50 ${colorClass} drop-shadow-md`;
+      popup.textContent = text;
+      popup.style.left = `${rect.left + rect.width / 2 - 25}px`;
+      popup.style.top = `${rect.top - 20}px`;
+      document.body.appendChild(popup);
+
+      setTimeout(() => popup.remove(), 600);
+    }
+
+    function updateScoreDisplay() {
+      const song = SONGS_DB[state.currentSongIndex];
+      const pct = song.notes.length > 0 ? Math.min(100, Math.round((state.score / (song.notes.length * 10)) * 100)) : 0;
+      document.getElementById('scoreCount').textContent = `${pct}%`;
+      document.getElementById('streakCount').textContent = state.streak;
+    }
+
+    /* =====================================================================
+       7. РЕНДЕРИНГ ПАДАЮЩИХ НОТ (WATERFALL CANVAS LOOP)
+       ===================================================================== */
+    const FALL_SPEED = 220; // пикселей в секунду
+
+    function renderWaterfall() {
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Отрисовка направляющих дорожек клавиш
+      const keys = pianoKeyboardEl.querySelectorAll('[data-pitch]');
+      keys.forEach(k => {
+        const kRect = k.getBoundingClientRect();
+        const kLeft = kRect.left - rect.left;
+        const isB = k.classList.contains('key-black');
+
+        ctx.fillStyle = isB ? 'rgba(15, 23, 42, 0.4)' : 'rgba(30, 41, 59, 0.15)';
+        ctx.fillRect(kLeft, 0, kRect.width, height);
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+        ctx.beginPath();
+        ctx.moveTo(kLeft, 0);
+        ctx.lineTo(kLeft, height);
+        ctx.stroke();
+      });
+
+      // Линия удара над клавиатурой
+      ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, height - 2);
+      ctx.lineTo(width, height - 2);
+      ctx.stroke();
+
+      // Отрисовка падающих нот
+      if (state.isPlaying || state.mode === 'wait') {
+        const song = SONGS_DB[state.currentSongIndex];
+        const nextTargetNote = song.notes[state.currentNoteIndex];
+
+        state.timelineNotes.forEach((tn, idx) => {
+          const keyEl = pianoKeyboardEl.querySelector(`[data-pitch="${tn.pitch}"]`);
+          if (!keyEl) return;
+
+          const kRect = keyEl.getBoundingClientRect();
+          const noteX = kRect.left - rect.left + 2;
+          const noteW = Math.max(kRect.width - 4, 12);
+
+          // Позиция Y относительно текущей ноты
+          let distanceInNotes = idx - state.currentNoteIndex;
+          let noteY = (height - 20) - (distanceInNotes * 65);
+          let noteH = Math.max(tn.duration * 45, 24);
+
+          // Если в режиме 'wait', текущая нота зависает прямо над линией касания
+          if (state.mode === 'wait') {
+            if (idx === state.currentNoteIndex) {
+              noteY = height - noteH - 4;
+            } else if (idx < state.currentNoteIndex) {
+              return; // уже сыгранные ноты не рисуем
+            }
+          }
+
+          if (noteY + noteH > 0 && noteY < height + 40) {
+            // Градиент нотного блока
+            const isTarget = idx === state.currentNoteIndex;
+            const grad = ctx.createLinearGradient(noteX, noteY, noteX + noteW, noteY + noteH);
+
+            if (isTarget) {
+              grad.addColorStop(0, '#fde047');
+              grad.addColorStop(1, '#eab308');
+            } else {
+              grad.addColorStop(0, '#818cf8');
+              grad.addColorStop(1, '#6366f1');
+            }
+
+            ctx.fillStyle = grad;
+            ctx.shadowColor = isTarget ? 'rgba(250, 204, 21, 0.5)' : 'rgba(99, 102, 241, 0.3)';
+            ctx.shadowBlur = 10;
+
+            // Скругленный прямоугольник ноты
+            roundRect(ctx, noteX, noteY, noteW, noteH, 6, true, false);
+            ctx.shadowBlur = 0;
+
+            // Номер пальца внутри падающей ноты
+            if (tn.finger) {
+              ctx.fillStyle = isTarget ? '#0f172a' : '#ffffff';
+              ctx.font = 'bold 11px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(`${tn.finger}`, noteX + noteW / 2, noteY + noteH / 2);
+            }
+          }
+        });
+      }
+
+      animationFrameId = requestAnimationFrame(renderWaterfall);
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    /* =====================================================================
+       8. РЕЖИМ СЛУШАТЬ (AUTOPLAY) И ТАЙМЕР ВОСПРОИЗВЕДЕНИЯ
+       ===================================================================== */
+    let listenTimer = null;
+
+    function startPlayback() {
+      audio.init();
+      state.isPlaying = true;
+      document.getElementById('playIcon').className = 'fa-solid fa-pause text-sm';
+
+      if (state.mode === 'listen') {
+        playNextAutoplayNote();
+      } else if (state.mode === 'flow') {
+        runFlowModeLoop();
+      }
+    }
+
+    function pausePlayback() {
+      state.isPlaying = false;
+      document.getElementById('playIcon').className = 'fa-solid fa-play text-sm';
+      if (listenTimer) clearTimeout(listenTimer);
+      if (state.songTimer) clearInterval(state.songTimer);
+    }
+
+    function togglePlayPause() {
+      if (state.isPlaying) {
+        pausePlayback();
+      } else {
+        startPlayback();
+      }
+    }
+
+    function playNextAutoplayNote() {
+      if (!state.isPlaying || state.mode !== 'listen') return;
+      const song = SONGS_DB[state.currentSongIndex];
+      if (state.currentNoteIndex >= song.notes.length) {
+        finishSong();
+        return;
+      }
+
+      const note = song.notes[state.currentNoteIndex];
+      pressKeyVisualAndSound(note.pitch, false);
+
+      const secPerBeat = (60 / song.defaultBpm) / state.tempoMultiplier;
+      const durationMs = note.duration * secPerBeat * 1000;
+
+      // Автоматическое снятие нажатия
+      setTimeout(() => {
+        releaseKeyVisual(note.pitch);
+      }, Math.max(durationMs * 0.8, 120));
+
+      state.currentNoteIndex++;
+      updateGuidanceHUD();
+
+      // Метрономный звук если включен
+      if (state.metronomeEnabled) {
+        audio.playMetronomeClick();
+        flashMetronomePulse();
+      }
+
+      listenTimer = setTimeout(playNextAutoplayNote, durationMs);
+    }
+
+    function runFlowModeLoop() {
+      if (!state.isPlaying || state.mode !== 'flow') return;
+      const song = SONGS_DB[state.currentSongIndex];
+      if (state.currentNoteIndex >= song.notes.length) {
+        finishSong();
+        return;
+      }
+
+      const note = song.notes[state.currentNoteIndex];
+      const secPerBeat = (60 / song.defaultBpm) / state.tempoMultiplier;
+      const durationMs = note.duration * secPerBeat * 1000;
+
+      listenTimer = setTimeout(() => {
+        // Если пользователь не нажал вовремя - пропуск
+        state.streak = 0;
+        state.currentNoteIndex++;
+        updateScoreDisplay();
+        updateGuidanceHUD();
+        runFlowModeLoop();
+      }, durationMs);
+    }
+
+    function resetSongProgress() {
+      pausePlayback();
+      state.currentNoteIndex = 0;
+      state.score = 0;
+      state.streak = 0;
+      updateScoreDisplay();
+      prepareSongTimeline();
+    }
+
+    function finishSong() {
+      pausePlayback();
+      showAccuracyToast('ПЕСНЯ ЗАВЕРШЕНА! 🏆');
+    }
+
+    function showAccuracyToast(text) {
+      const toast = document.getElementById('accuracyToast');
+      toast.textContent = text;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2500);
+    }
+
+    function flashMetronomePulse() {
+      const pulse = document.getElementById('metronomePulse');
+      pulse.classList.add('bg-violet-500', 'scale-125');
+      setTimeout(() => pulse.classList.remove('bg-violet-500', 'scale-125'), 80);
+    }
+
+    /* =====================================================================
+       9. МОДАЛЬНОЕ ОКНО БИБЛИОТЕКИ ПЕСЕН И ПОИСК
+       ===================================================================== */
+    const songModal = document.getElementById('songModal');
+    const songsListContainer = document.getElementById('songsListContainer');
+
+    function openSongModal() {
+      songModal.classList.remove('hidden');
+      setTimeout(() => {
+        songModal.classList.remove('opacity-0');
+      }, 10);
+      renderSongCards(SONGS_DB);
+    }
+
+    function closeSongModal() {
+      songModal.classList.add('opacity-0');
+      setTimeout(() => {
+        songModal.classList.add('hidden');
+      }, 200);
+    }
+
+    function renderSongCards(songs) {
+      songsListContainer.innerHTML = '';
+      songs.forEach(s => {
+        const originalIndex = SONGS_DB.findIndex(item => item.id === s.id);
+        const isCurrent = originalIndex === state.currentSongIndex;
+
+        const card = document.createElement('div');
+        card.className = `p-3.5 sm:p-4 rounded-2xl border transition-all duration-150 cursor-pointer flex items-center justify-between gap-3 ${
+          isCurrent 
+            ? 'bg-violet-950/40 border-violet-500/60 ring-1 ring-violet-500/30' 
+            : 'bg-slate-950/60 border-slate-800/80 hover:bg-slate-800/60 hover:border-slate-700'
+        }`;
+
+        let diffBadge = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+        let diffText = 'Легкий';
+        if (s.difficulty === 'Medium') {
+          diffBadge = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+          diffText = 'Средний';
+        } else if (s.difficulty === 'Hard') {
+          diffBadge = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
+          diffText = 'Сложный';
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div class="w-10 h-10 rounded-xl ${isCurrent ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-400'} flex items-center justify-center font-bold text-sm shrink-0">
+              ${isCurrent ? '<i class="fa-solid fa-play text-xs"></i>' : originalIndex + 1}
+            </div>
+            <div class="truncate">
+              <h4 class="font-display font-bold text-sm sm:text-base text-white truncate">${s.title}</h4>
+              <p class="text-xs text-slate-400 truncate">${s.composer} • ${s.notes.length} нот</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border ${diffBadge}">${diffText}</span>
+            <button class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-violet-600 text-slate-300 hover:text-white flex items-center justify-center transition">
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          loadSong(originalIndex);
+          closeSongModal();
+        });
+
+        songsListContainer.appendChild(card);
+      });
+    }
+
+    function loadSong(index) {
+      state.currentSongIndex = index;
+      const song = SONGS_DB[index];
+      document.getElementById('currentSongTitle').textContent = song.title;
+      resetSongProgress();
+    }
+
+    // Поиск по библиотеке
+    document.getElementById('songSearchInput').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      const filtered = SONGS_DB.filter(s => 
+        s.title.toLowerCase().includes(q) || 
+        s.composer.toLowerCase().includes(q)
+      );
+      renderSongCards(filtered);
+    });
+
+    // Фильтры по сложности
+    document.querySelectorAll('#difficultyFilterButtons .filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#difficultyFilterButtons .filter-btn').forEach(b => {
+          b.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white filter-btn transition';
+        });
+        btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-violet-600 text-white filter-btn transition';
+
+        const diff = btn.dataset.diff;
+        const q = document.getElementById('songSearchInput').value.toLowerCase().trim();
+        const filtered = SONGS_DB.filter(s => {
+          const matchDiff = diff === 'all' || s.difficulty === diff;
+          const matchSearch = s.title.toLowerCase().includes(q) || s.composer.toLowerCase().includes(q);
+          return matchDiff && matchSearch;
+        });
+        renderSongCards(filtered);
+      });
+    });
+
+    /* =====================================================================
+       10. ИНИЦИАЛИЗАЦИЯ И ПРИВЯЗКА КНОПОК УПРАВЛЕНИЯ
+       ===================================================================== */
+    // Воспроизведение / Пауза
+    document.getElementById('btnPlayPause').addEventListener('click', togglePlayPause);
+    document.getElementById('btnRestart').addEventListener('click', resetSongProgress);
+
+    // Смена режима (Ждать меня / Поток / Слушать)
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-btn').forEach(b => {
+          b.className = 'mode-btn px-2.5 py-1.5 rounded-lg transition text-slate-400 hover:text-white flex items-center gap-1.5';
+        });
+        btn.className = 'mode-btn px-2.5 py-1.5 rounded-lg transition text-white bg-violet-600 shadow-sm font-semibold flex items-center gap-1.5';
+        
+        state.mode = btn.dataset.mode;
+        resetSongProgress();
+      });
+    });
+
+    // Изменение темпа (+ / -)
+    const tempoDisplay = document.getElementById('tempoDisplay');
+    document.getElementById('btnTempoInc').addEventListener('click', () => {
+      if (state.tempoMultiplier < 1.5) {
+        state.tempoMultiplier = Math.min(1.5, Math.round((state.tempoMultiplier + 0.1) * 10) / 10);
+        tempoDisplay.textContent = `${Math.round(state.tempoMultiplier * 100)}%`;
+        prepareSongTimeline();
+      }
+    });
+    document.getElementById('btnTempoDec').addEventListener('click', () => {
+      if (state.tempoMultiplier > 0.3) {
+        state.tempoMultiplier = Math.max(0.3, Math.round((state.tempoMultiplier - 0.1) * 10) / 10);
+        tempoDisplay.textContent = `${Math.round(state.tempoMultiplier * 100)}%`;
+        prepareSongTimeline();
+      }
+    });
+
+    // Метроном
+    const btnMetronome = document.getElementById('btnMetronome');
+    btnMetronome.addEventListener('click', () => {
+      state.metronomeEnabled = !state.metronomeEnabled;
+      btnMetronome.className = state.metronomeEnabled
+        ? 'h-9 px-2.5 sm:px-3 rounded-xl bg-violet-600 text-white flex items-center gap-1.5 transition text-xs font-medium shadow-md shadow-violet-600/30'
+        : 'h-9 px-2.5 sm:px-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5 transition text-xs font-medium';
+    });
+
+    // Педаль сустейна
+    const btnSustain = document.getElementById('btnSustain');
+    btnSustain.addEventListener('click', () => {
+      state.sustainEnabled = !state.sustainEnabled;
+      audio.sustain = state.sustainEnabled;
+      btnSustain.className = state.sustainEnabled
+        ? 'h-9 px-2.5 sm:px-3 rounded-xl bg-violet-600 text-white flex items-center gap-1.5 transition text-xs font-medium shadow-md shadow-violet-600/30'
+        : 'h-9 px-2.5 sm:px-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-violet-400 flex items-center gap-1.5 transition text-xs font-medium';
+    });
+
+    // Переключение формата подписей нот (До / C4 / Выкл)
+    const btnToggleLabels = document.getElementById('btnToggleLabels');
+    const lblModeText = document.getElementById('lblModeText');
+    btnToggleLabels.addEventListener('click', () => {
+      if (state.labelMode === 'solfege') {
+        state.labelMode = 'latin';
+        lblModeText.textContent = 'C4';
+      } else if (state.labelMode === 'latin') {
+        state.labelMode = 'off';
+        lblModeText.textContent = '—';
+      } else {
+        state.labelMode = 'solfege';
+        lblModeText.textContent = 'ДО';
+      }
+      updateKeyLabels();
+      updateGuidanceHUD();
+    });
+
+    // Сдвиг октавы клавиатуры
+    document.getElementById('btnOctaveDown').addEventListener('click', () => {
+      if (state.octaveStart > 1) {
+        state.octaveStart--;
+        buildKeyboard();
+      }
+    });
+    document.getElementById('btnOctaveUp').addEventListener('click', () => {
+      if (state.octaveStart < 5) {
+        state.octaveStart++;
+        buildKeyboard();
+      }
+    });
+
+    // Зум размера клавиш для удобной игры пальцами на планшетах
+    document.getElementById('btnZoomIn').addEventListener('click', () => {
+      if (state.keyBaseWidth < 68) {
+        state.keyBaseWidth += 4;
+        buildKeyboard();
+      }
+    });
+    document.getElementById('btnZoomOut').addEventListener('click', () => {
+      if (state.keyBaseWidth > 32) {
+        state.keyBaseWidth -= 4;
+        buildKeyboard();
+      }
+    });
+
+    // Модалка песен
+    document.getElementById('btnOpenSongs').addEventListener('click', openSongModal);
+    document.getElementById('btnMobileSongs').addEventListener('click', openSongModal);
+    document.getElementById('btnCloseModal').addEventListener('click', closeSongModal);
+    document.getElementById('btnCloseModalBottom').addEventListener('click', closeSongModal);
+    songModal.addEventListener('click', (e) => {
+      if (e.target === songModal) closeSongModal();
+    });
+
+    // Запуск приложения при загрузке окна
+    window.onload = function() {
+      // Авто-адаптация ширины клавиш под планшеты
+      if (window.innerWidth >= 768 && window.innerWidth <= 1200) {
+        state.keyBaseWidth = 48; // идеальная ширина под пальцы на iPad
+      }
+      buildKeyboard();
+      resizeCanvas();
+      loadSong(0); // Загружаем "Для Элизы"
+      requestAnimationFrame(renderWaterfall);
+    };
+  </script>
+</body>
+</html>
