@@ -101,6 +101,26 @@
       animation: floatUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       pointer-events: none;
     }
+
+    /* Screen shake on high combo */
+    @keyframes microShake {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(-2px, 1px); }
+      50% { transform: translate(2px, -1px); }
+      75% { transform: translate(-1px, -1px); }
+    }
+    .combo-shake {
+      animation: microShake 0.15s ease-in-out;
+    }
+
+    /* Pulse ring for combo badge */
+    @keyframes comboGlow {
+      0%, 100% { box-shadow: 0 0 12px rgba(251, 191, 36, 0.4); }
+      50% { box-shadow: 0 0 24px rgba(251, 191, 36, 0.85); }
+    }
+    .combo-active-glow {
+      animation: comboGlow 1.2s infinite ease-in-out;
+    }
   </style>
 </head>
 <body class="h-full flex flex-col bg-slate-950 font-sans overflow-hidden">
@@ -181,6 +201,12 @@
           <span id="lblModeText">ДО</span>
         </button>
 
+        <!-- Sound Timbre Selector (Concert Grand / Electric / Synth) -->
+        <button id="btnToggleTimbre" class="h-9 px-2.5 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 hover:text-amber-200 flex items-center gap-1.5 text-xs font-semibold transition" title="Смена тембра инструмента">
+          <i class="fa-solid fa-sliders text-xs"></i>
+          <span id="timbreText" class="hidden md:inline">Рояль</span>
+        </button>
+
         <!-- Library button for mobile -->
         <button id="btnMobileSongs" class="sm:hidden h-9 w-9 rounded-xl bg-violet-600/30 text-violet-300 border border-violet-500/40 flex items-center justify-center">
           <i class="fa-solid fa-book-open text-xs"></i>
@@ -190,32 +216,45 @@
     </div>
   </header>
 
-  <!-- SECONDARY HUD BAR: Realtime Stats & Guidance -->
-  <div class="flex-none bg-slate-900/60 border-b border-slate-800/60 px-4 py-1.5 text-xs flex items-center justify-between text-slate-400">
-    <div class="flex items-center gap-4">
-      <div class="flex items-center gap-2">
-        <span class="text-slate-500">Следующая:</span>
+  <!-- SECONDARY HUD BAR: Realtime Stats, A-B Loop & Guidance -->
+  <div class="flex-none bg-slate-900/60 border-b border-slate-800/60 px-3 sm:px-4 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2 text-slate-400">
+    <div class="flex items-center gap-3 sm:gap-4">
+      <div class="flex items-center gap-1.5">
+        <span class="text-slate-500">След.:</span>
         <span id="hintNextNote" class="font-bold text-violet-400 text-sm tracking-wide font-mono">-</span>
       </div>
       <div class="flex items-center gap-1.5">
         <span class="text-slate-500">Палец:</span>
         <span id="hintFinger" class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[11px] ring-1 ring-amber-500/40">-</span>
       </div>
+
+      <!-- Smart Loop & Auto-Speedup Controls -->
+      <div class="hidden sm:flex items-center gap-1.5 border-l border-slate-800 pl-3">
+        <button id="btnLoopToggle" class="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium flex items-center gap-1 transition" title="Зациклить сложный фрагмент">
+          <i class="fa-solid fa-repeat text-[10px]"></i>
+          <span id="loopStatusText">Повтор: Выкл</span>
+        </button>
+        <button id="btnAutoSpeedToggle" class="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium flex items-center gap-1 transition" title="Авто-ускорение темпа на +5% при успешном круге">
+          <i class="fa-solid fa-gauge-high text-[10px]"></i>
+          <span id="autoSpeedText">Авто-разгон</span>
+        </button>
+      </div>
+
       <div id="accuracyToast" class="hidden font-bold tracking-wider text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse">
         ОТЛИЧНО!
       </div>
     </div>
 
-    <!-- Score & Streak in Flow Mode -->
-    <div class="flex items-center gap-4 font-mono">
-      <div class="flex items-center gap-1.5">
+    <!-- Score, Multiplier & Streak -->
+    <div class="flex items-center gap-3 sm:gap-4 font-mono">
+      <div id="comboBadge" class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-800/80 border border-slate-700/80 transition-all">
         <i class="fa-solid fa-fire text-amber-400 text-[11px]"></i>
-        <span>Серия:</span>
         <span id="streakCount" class="font-bold text-white">0</span>
+        <span id="multiplierBadge" class="text-[10px] font-black text-amber-300 ml-0.5">1x</span>
       </div>
       <div class="flex items-center gap-1.5">
         <i class="fa-solid fa-trophy text-yellow-400 text-[11px]"></i>
-        <span>Счет:</span>
+        <span class="hidden sm:inline">Точность:</span>
         <span id="scoreCount" class="font-bold text-white">0%</span>
       </div>
       <div class="flex items-center gap-1.5 text-slate-500">
@@ -224,13 +263,23 @@
     </div>
   </div>
 
-  <!-- MAIN INTERACTIVE CANVAS (Synthesia-style Falling Notes Waterfall) -->
-  <main class="flex-1 relative w-full overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-    <!-- Background grid lines for keys -->
+  <!-- MAIN INTERACTIVE CANVAS (Synthesia-style Falling Notes + Particles + Visualizer) -->
+  <main id="stageContainer" class="flex-1 relative w-full overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+    <!-- Background grid lines & particles -->
     <canvas id="fallingNotesCanvas" class="w-full h-full block cursor-crosshair"></canvas>
     
+    <!-- Dynamic Visual Audio Equalizer Strip at bottom of waterfall -->
+    <div id="visualizerBar" class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-amber-400 opacity-60 pointer-events-none transition-all duration-75"></div>
+
     <!-- Metronome pulse indicator dot -->
     <div id="metronomePulse" class="absolute top-4 right-5 w-4 h-4 rounded-full bg-slate-700/50 border border-slate-600 transition-all duration-75 pointer-events-none"></div>
+
+    <!-- Mobile Quick Tempo Bar -->
+    <div class="sm:hidden absolute top-3 left-3 flex items-center bg-slate-900/85 backdrop-blur border border-slate-800 px-2 py-1 rounded-xl gap-2 z-20">
+      <button id="btnMobileTempoDec" class="w-6 h-6 rounded bg-slate-800 text-slate-200 font-bold text-xs">-</button>
+      <span id="mobileTempoDisplay" class="text-[11px] font-mono font-bold text-violet-300">100%</span>
+      <button id="btnMobileTempoInc" class="w-6 h-6 rounded bg-slate-800 text-slate-200 font-bold text-xs">+</button>
+    </div>
 
     <!-- Floating Feedback layer -->
     <div id="feedbackLayer" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
@@ -274,9 +323,9 @@
       <div class="p-4 sm:p-6 border-b border-slate-800 flex items-center justify-between">
         <div>
           <h2 class="text-xl sm:text-2xl font-display font-bold text-white flex items-center gap-2.5">
-            <i class="fa-solid fa-book-bookmark text-violet-400"></i> Библиотека классических шедевров
+            <i class="fa-solid fa-book-bookmark text-violet-400"></i> Библиотека шедевров (21 мелодия)
           </h2>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">20 легендарных мелодий с аппликатурой пальцев и интерактивным обучением</p>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Легендарная классика и народные хиты с аппликатурой пальцев и умным обучением</p>
         </div>
         <button id="btnCloseModal" class="w-10 h-10 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -304,20 +353,105 @@
 
       <!-- Modal Footer -->
       <div class="p-4 bg-slate-950/60 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-        <span>Совет: для медленного разбора используйте режим <b class="text-violet-300">«Ждать меня»</b> и темп 50%.</span>
+        <span>Совет: включите <b class="text-amber-300">«Авто-разгон»</b>, чтобы тренажёр плавно ускорял темп после каждого чистого прохода!</span>
         <button id="btnCloseModalBottom" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium transition">Закрыть</button>
       </div>
 
     </div>
   </div>
 
+  <!-- END OF SONG SUMMARY / MASTERY REPORT MODAL -->
+  <div id="summaryModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-violet-500/40 rounded-3xl w-full max-w-md p-6 text-center shadow-2xl ring-1 ring-white/10">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 text-3xl shadow-lg shadow-amber-500/30 mb-4">
+        <i class="fa-solid fa-crown"></i>
+      </div>
+      <h3 class="text-2xl font-display font-extrabold text-white">Произведение исполнено!</h3>
+      <p id="summarySongName" class="text-sm text-violet-300 font-medium mt-1">Калинка-малинка</p>
+
+      <div class="grid grid-cols-3 gap-3 my-6">
+        <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl">
+          <div class="text-[11px] text-slate-400 uppercase font-semibold">Точность</div>
+          <div id="summaryAccuracy" class="text-xl font-mono font-extrabold text-emerald-400 mt-1">100%</div>
+        </div>
+        <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl">
+          <div class="text-[11px] text-slate-400 uppercase font-semibold">Макс. серия</div>
+          <div id="summaryStreak" class="text-xl font-mono font-extrabold text-amber-400 mt-1">24</div>
+        </div>
+        <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl">
+          <div class="text-[11px] text-slate-400 uppercase font-semibold">Темп</div>
+          <div id="summaryTempo" class="text-xl font-mono font-extrabold text-violet-400 mt-1">100%</div>
+        </div>
+      </div>
+
+      <div id="autoSpeedNotification" class="hidden mb-5 p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs font-medium">
+        <i class="fa-solid fa-bolt mr-1 text-amber-400"></i> Авто-разгон: темп повышен до <b id="nextAcceleratedTempo">105%</b>!
+      </div>
+
+      <div class="flex gap-3">
+        <button id="btnSummaryReplay" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-violet-600/30 transition active:scale-95">
+          <i class="fa-solid fa-rotate-right mr-1.5"></i> Сыграть ещё раз
+        </button>
+        <button id="btnSummaryLibrary" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition">
+          К списку
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT APPLICATION LOGIC -->
   <script>
     /* =====================================================================
-       1. БИБЛИОТЕКА 20 КЛАССИЧЕСКИХ МЕЛОДИЙ С ТОЧНЫМИ НОТАМИ И АППЛИКАТУРОЙ
+       1. БИБЛИОТЕКА 21 КЛАССИЧЕСКОЙ И НАРОДНОЙ МЕЛОДИИ (ВКЛЮЧАЯ КАЛИНКУ-МАЛИНКУ)
        ===================================================================== */
     // Note naming system: Pitch standard C3 to C6, durations in beats, finger: 1 (thumb) to 5 (pinky)
     const SONGS_DB = [
+      {
+        id: 'kalinka_malinka',
+        title: 'Калинка-малинка (Русская народная)',
+        composer: 'Иван Ларионов (1860)',
+        difficulty: 'Medium',
+        defaultBpm: 132,
+        description: 'Знаменитый русский шедевр с контрастом распевного запева и стремительного плясового припева.',
+        notes: [
+          // Лирический запев: "Ка-лин-ка, ка-лин-ка, ка-лин-ка мо-я..."
+          { pitch: 'F#4', duration: 1.5, finger: 4 },
+          { pitch: 'E4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 0.5, finger: 2 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'E4', duration: 1.0, finger: 4 },
+          { pitch: 'C#4', duration: 0.5, finger: 2 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'E4', duration: 1.0, finger: 4 },
+          { pitch: 'D4', duration: 0.5, finger: 3 },
+          { pitch: 'C#4', duration: 0.5, finger: 2 },
+          { pitch: 'B3', duration: 1.5, finger: 1 },
+          // Стремительный плясовой припев: "Калинка, калинка, калинка моя! В саду ягода малинка..."
+          { pitch: 'F#4', duration: 0.5, finger: 5 },
+          { pitch: 'E4', duration: 0.25, finger: 4 },
+          { pitch: 'C#4', duration: 0.25, finger: 2 },
+          { pitch: 'D4', duration: 0.25, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'C#4', duration: 0.25, finger: 2 },
+          { pitch: 'D4', duration: 0.25, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.25, finger: 3 },
+          { pitch: 'C#4', duration: 0.25, finger: 2 },
+          { pitch: 'B3', duration: 0.5, finger: 1 },
+          { pitch: 'D4', duration: 0.25, finger: 2 },
+          { pitch: 'F#4', duration: 0.5, finger: 4 },
+          { pitch: 'E4', duration: 0.25, finger: 3 },
+          { pitch: 'C#4', duration: 0.25, finger: 2 },
+          { pitch: 'D4', duration: 0.25, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'C#4', duration: 0.25, finger: 2 },
+          { pitch: 'D4', duration: 0.25, finger: 3 },
+          { pitch: 'E4', duration: 0.5, finger: 4 },
+          { pitch: 'D4', duration: 0.25, finger: 3 },
+          { pitch: 'C#4', duration: 0.25, finger: 2 },
+          { pitch: 'B3', duration: 1.0, finger: 1 }
+        ]
+      },
       {
         id: 'fur_elise',
         title: 'Für Elise (К Элизе)',
@@ -852,6 +986,7 @@
       constructor() {
         this.ctx = null;
         this.sustain = false;
+        this.timbre = 'grand'; // 'grand' (Концертный рояль) | 'epiano' (Электропиано) | 'harpsichord' (Клавесин)
         this.activeVoices = new Map();
         this.masterGain = null;
       }
@@ -874,27 +1009,40 @@
         const freq = pitchToFrequency(pitch);
         const now = this.ctx.currentTime;
 
-        // Создаем богатый гармонический тембр фортепиано (3 осциллятора с обертонами)
         const voiceGain = this.ctx.createGain();
         voiceGain.connect(this.masterGain);
 
-        // Основной тон (синус + легкая треугольная волна для теплоты)
         const osc1 = this.ctx.createOscillator();
-        osc1.type = 'triangle';
-        osc1.frequency.setValueAtTime(freq, now);
-
         const osc2 = this.ctx.createOscillator();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(freq * 2, now); // Вторая гармоника
-
         const osc3 = this.ctx.createOscillator();
-        osc3.type = 'sine';
-        osc3.frequency.setValueAtTime(freq * 3, now); // Третья гармоника
+
+        osc1.frequency.setValueAtTime(freq, now);
+        osc2.frequency.setValueAtTime(freq * 2, now);
+        osc3.frequency.setValueAtTime(freq * 3, now);
 
         const osc2Gain = this.ctx.createGain();
-        osc2Gain.gain.setValueAtTime(0.25, now);
         const osc3Gain = this.ctx.createGain();
-        osc3Gain.gain.setValueAtTime(0.1, now);
+
+        if (this.timbre === 'grand') {
+          osc1.type = 'triangle';
+          osc2.type = 'sine';
+          osc3.type = 'sine';
+          osc2Gain.gain.setValueAtTime(0.28, now);
+          osc3Gain.gain.setValueAtTime(0.12, now);
+        } else if (this.timbre === 'epiano') {
+          osc1.type = 'sine';
+          osc2.type = 'triangle';
+          osc3.type = 'sine';
+          osc2Gain.gain.setValueAtTime(0.35, now);
+          osc3Gain.gain.setValueAtTime(0.05, now);
+        } else {
+          // Клавесин (яркие верхние гармоники)
+          osc1.type = 'sawtooth';
+          osc2.type = 'triangle';
+          osc3.type = 'sine';
+          osc2Gain.gain.setValueAtTime(0.2, now);
+          osc3Gain.gain.setValueAtTime(0.22, now);
+        }
 
         osc1.connect(voiceGain);
         osc2.connect(osc2Gain);
@@ -902,10 +1050,10 @@
         osc3.connect(osc3Gain);
         osc3Gain.connect(voiceGain);
 
-        // Фортепианная огибающая ADSR (быстрая атака, естественный спад)
-        const decayTime = this.sustain ? Math.max(durationSec * 2.5, 3.0) : Math.max(durationSec, 1.2);
+        const decayTime = this.sustain ? Math.max(durationSec * 2.8, 3.2) : Math.max(durationSec, 1.3);
+        const peakGain = this.timbre === 'harpsichord' ? 0.55 : 0.9;
         voiceGain.gain.setValueAtTime(0.0001, now);
-        voiceGain.gain.linearRampToValueAtTime(0.9, now + 0.006); // мгновенный удар молоточка
+        voiceGain.gain.linearRampToValueAtTime(peakGain, now + 0.006);
         voiceGain.gain.exponentialRampToValueAtTime(0.25, now + 0.25);
         voiceGain.gain.exponentialRampToValueAtTime(0.0001, now + decayTime);
 
@@ -918,7 +1066,6 @@
         osc2.stop(stopTime);
         osc3.stop(stopTime);
 
-        // Отслеживаем звучащий голос
         this.activeVoices.set(pitch, { voiceGain, stopTime });
       }
 
@@ -950,9 +1097,11 @@
       currentSongIndex: 0,
       mode: 'wait', // 'wait' | 'flow' | 'listen'
       isPlaying: false,
-      tempoMultiplier: 1.0, // 0.25x до 1.5x
+      tempoMultiplier: 1.0, // 0.3x до 1.5x
       sustainEnabled: false,
       metronomeEnabled: false,
+      loopEnabled: false,
+      autoSpeedEnabled: false,
       labelMode: 'solfege', // 'solfege' (До, Ре) | 'latin' (C, D) | 'off'
       octaveStart: 3, // C3
       octavesCount: 3, // C3 - B5 (3 полных октавы)
@@ -964,7 +1113,12 @@
       songTimer: null,
       score: 0,
       streak: 0,
+      maxStreak: 0,
       totalNotesInSong: 0,
+      
+      // Система визуальных частиц и световых импульсов
+      particles: [],
+      keyBeams: new Map(), // pitch -> alpha
       
       // Временные метки нот для падающего водопада (Waterfall)
       timelineNotes: []
@@ -1085,10 +1239,23 @@
       const norm = normalizePitch(pitch);
       audio.playNote(norm);
 
-      // Визуальная подсветка клавиши
+      // Визуальная подсветка клавиши и световой луч на канвасе
       const keyEl = pianoKeyboardEl.querySelector(`[data-pitch="${norm}"]`);
       if (keyEl) {
         keyEl.classList.add('active');
+        state.keyBeams.set(norm, 1.0);
+        spawnKeySparks(keyEl, isUserHit ? '#c084fc' : '#60a5fa', 8);
+      }
+
+      // Пульсация эквалайзера
+      const visBar = document.getElementById('visualizerBar');
+      if (visBar) {
+        visBar.style.opacity = '1';
+        visBar.style.height = '4px';
+        setTimeout(() => {
+          visBar.style.opacity = '0.55';
+          visBar.style.height = '2px';
+        }, 110);
       }
 
       // Если нажатие произвел пользователь во время практики
@@ -1306,10 +1473,18 @@
       if (state.mode === 'wait') {
         // Режим «Ждать меня»: продвигаемся вперед только при правильном нажатии
         if (playedPitch === normTarget) {
-          triggerHitFeedback(playedPitch, 'ОТЛИЧНО', 'text-emerald-400');
-          state.currentNoteIndex++;
-          state.score += 10;
           state.streak++;
+          if (state.streak > state.maxStreak) state.maxStreak = state.streak;
+          const mult = getComboMultiplier();
+          state.score += 10 * mult;
+
+          const label = state.streak >= 10 ? `ИДЕАЛЬНО! x${mult}` : 'ОТЛИЧНО!';
+          triggerHitFeedback(playedPitch, label, 'text-emerald-400');
+
+          const keyEl = pianoKeyboardEl.querySelector(`[data-pitch="${playedPitch}"]`);
+          if (keyEl) spawnKeySparks(keyEl, '#34d399', 16);
+
+          state.currentNoteIndex++;
           updateScoreDisplay();
           updateGuidanceHUD();
 
@@ -1325,9 +1500,15 @@
       } else if (state.mode === 'flow') {
         // Режим «Поток»: проверка попадания в текущую активную падающую ноту
         if (playedPitch === normTarget) {
-          triggerHitFeedback(playedPitch, 'В ТОЧКУ!', 'text-emerald-400');
-          state.score += 10;
           state.streak++;
+          if (state.streak > state.maxStreak) state.maxStreak = state.streak;
+          const mult = getComboMultiplier();
+          state.score += 10 * mult;
+
+          triggerHitFeedback(playedPitch, `В ТОЧКУ! x${mult}`, 'text-emerald-400');
+          const keyEl = pianoKeyboardEl.querySelector(`[data-pitch="${playedPitch}"]`);
+          if (keyEl) spawnKeySparks(keyEl, '#fbbf24', 18);
+
           state.currentNoteIndex++;
         } else {
           state.streak = 0;
@@ -1335,6 +1516,34 @@
         }
         updateScoreDisplay();
         updateGuidanceHUD();
+      }
+    }
+
+    function getComboMultiplier() {
+      if (state.streak >= 20) return 4;
+      if (state.streak >= 10) return 3;
+      if (state.streak >= 5) return 2;
+      return 1;
+    }
+
+    function spawnKeySparks(keyEl, color, count = 12) {
+      const canvasRect = canvas.getBoundingClientRect();
+      const kRect = keyEl.getBoundingClientRect();
+      const originX = (kRect.left - canvasRect.left) + kRect.width / 2;
+      const originY = canvasRect.height - 6;
+
+      for (let i = 0; i < count; i++) {
+        const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.4;
+        const speed = 1.5 + Math.random() * 4.5;
+        state.particles.push({
+          x: originX + (Math.random() - 0.5) * (kRect.width * 0.6),
+          y: originY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1.2,
+          size: 2 + Math.random() * 3.5,
+          alpha: 1.0,
+          color: color
+        });
       }
     }
 
@@ -1346,22 +1555,41 @@
       const popup = document.createElement('div');
       popup.className = `hit-popup fixed font-display font-black text-sm z-50 ${colorClass} drop-shadow-md`;
       popup.textContent = text;
-      popup.style.left = `${rect.left + rect.width / 2 - 25}px`;
-      popup.style.top = `${rect.top - 20}px`;
+      popup.style.left = `${rect.left + rect.width / 2 - 30}px`;
+      popup.style.top = `${rect.top - 22}px`;
       document.body.appendChild(popup);
+
+      // Микро-тряска экрана на высоких комбо
+      if (state.streak > 0 && state.streak % 10 === 0) {
+        const stage = document.getElementById('stageContainer');
+        stage.classList.remove('combo-shake');
+        void stage.offsetWidth;
+        stage.classList.add('combo-shake');
+      }
 
       setTimeout(() => popup.remove(), 600);
     }
 
     function updateScoreDisplay() {
       const song = SONGS_DB[state.currentSongIndex];
-      const pct = song.notes.length > 0 ? Math.min(100, Math.round((state.score / (song.notes.length * 10)) * 100)) : 0;
+      const baseMax = song.notes.length * 10;
+      const pct = song.notes.length > 0 ? Math.min(100, Math.round((state.score / baseMax) * 100)) : 0;
       document.getElementById('scoreCount').textContent = `${pct}%`;
       document.getElementById('streakCount').textContent = state.streak;
+
+      const mult = getComboMultiplier();
+      document.getElementById('multiplierBadge').textContent = `${mult}x`;
+
+      const comboBadge = document.getElementById('comboBadge');
+      if (state.streak >= 5) {
+        comboBadge.classList.add('combo-active-glow', 'border-amber-400/70', 'bg-amber-950/40');
+      } else {
+        comboBadge.classList.remove('combo-active-glow', 'border-amber-400/70', 'bg-amber-950/40');
+      }
     }
 
     /* =====================================================================
-       7. РЕНДЕРИНГ ПАДАЮЩИХ НОТ (WATERFALL CANVAS LOOP)
+       7. РЕНДЕРИНГ ПАДАЮЩИХ НОТ, СВЕТОВЫХ ЛУЧЕЙ И ЧАСТИЦ (CANVAS LOOP)
        ===================================================================== */
     const FALL_SPEED = 220; // пикселей в секунду
 
@@ -1372,15 +1600,27 @@
 
       ctx.clearRect(0, 0, width, height);
 
-      // Отрисовка направляющих дорожек клавиш
+      // Отрисовка направляющих дорожек клавиш и световых столбов при нажатии
       const keys = pianoKeyboardEl.querySelectorAll('[data-pitch]');
       keys.forEach(k => {
         const kRect = k.getBoundingClientRect();
         const kLeft = kRect.left - rect.left;
         const isB = k.classList.contains('key-black');
+        const pitch = k.dataset.pitch;
 
         ctx.fillStyle = isB ? 'rgba(15, 23, 42, 0.4)' : 'rgba(30, 41, 59, 0.15)';
         ctx.fillRect(kLeft, 0, kRect.width, height);
+
+        // Вертикальный световой луч от нажатой клавиши
+        const beamAlpha = state.keyBeams.get(pitch) || 0;
+        if (beamAlpha > 0.01) {
+          const beamGrad = ctx.createLinearGradient(0, height, 0, height * 0.25);
+          beamGrad.addColorStop(0, `rgba(167, 139, 250, ${beamAlpha * 0.45})`);
+          beamGrad.addColorStop(1, 'rgba(167, 139, 250, 0)');
+          ctx.fillStyle = beamGrad;
+          ctx.fillRect(kLeft, height * 0.25, kRect.width, height * 0.75);
+          state.keyBeams.set(pitch, beamAlpha * 0.91);
+        }
 
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
         ctx.beginPath();
@@ -1390,7 +1630,7 @@
       });
 
       // Линия удара над клавиатурой
-      ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)';
+      ctx.strokeStyle = 'rgba(139, 92, 246, 0.65)';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(0, height - 2);
@@ -1431,18 +1671,18 @@
 
             if (isTarget) {
               grad.addColorStop(0, '#fde047');
-              grad.addColorStop(1, '#eab308');
+              grad.addColorStop(1, '#f59e0b');
             } else {
-              grad.addColorStop(0, '#818cf8');
+              grad.addColorStop(0, '#a78bfa');
               grad.addColorStop(1, '#6366f1');
             }
 
             ctx.fillStyle = grad;
-            ctx.shadowColor = isTarget ? 'rgba(250, 204, 21, 0.5)' : 'rgba(99, 102, 241, 0.3)';
-            ctx.shadowBlur = 10;
+            ctx.shadowColor = isTarget ? 'rgba(250, 204, 21, 0.65)' : 'rgba(99, 102, 241, 0.35)';
+            ctx.shadowBlur = isTarget ? 14 : 8;
 
             // Скругленный прямоугольник ноты
-            roundRect(ctx, noteX, noteY, noteW, noteH, 6, true, false);
+            roundRect(ctx, noteX, noteY, noteW, noteH, 7, true, false);
             ctx.shadowBlur = 0;
 
             // Номер пальца внутри падающей ноты
@@ -1455,6 +1695,30 @@
             }
           }
         });
+      }
+
+      // Отрисовка и физика искр/частиц при попадании по нотам
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const p = state.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.14; // легкая гравитация
+        p.alpha -= 0.032;
+
+        if (p.alpha <= 0) {
+          state.particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
 
       animationFrameId = requestAnimationFrame(renderWaterfall);
@@ -1566,13 +1830,69 @@
       state.currentNoteIndex = 0;
       state.score = 0;
       state.streak = 0;
+      state.maxStreak = 0;
       updateScoreDisplay();
       prepareSongTimeline();
     }
 
     function finishSong() {
       pausePlayback();
-      showAccuracyToast('ПЕСНЯ ЗАВЕРШЕНА! 🏆');
+      const song = SONGS_DB[state.currentSongIndex];
+
+      // Если включено зацикливание (Повтор), мгновенно начинаем новый круг
+      if (state.loopEnabled) {
+        if (state.autoSpeedEnabled && state.tempoMultiplier < 1.5) {
+          setTempo(Math.min(1.5, Math.round((state.tempoMultiplier + 0.05) * 100) / 100));
+          showAccuracyToast(`КРУГ ПРОЙДЕН! ТЕМП ${Math.round(state.tempoMultiplier * 100)}% 🔥`);
+        } else {
+          showAccuracyToast('ПОВТОР КРУГА! 🔄');
+        }
+        state.currentNoteIndex = 0;
+        prepareSongTimeline();
+        if (state.mode === 'listen' || state.mode === 'flow') {
+          startPlayback();
+        }
+        return;
+      }
+
+      // Иначе показываем карточку результатов исполнения
+      const baseMax = song.notes.length * 10;
+      const pct = song.notes.length > 0 ? Math.min(100, Math.round((state.score / baseMax) * 100)) : 100;
+
+      document.getElementById('summarySongName').textContent = song.title;
+      document.getElementById('summaryAccuracy').textContent = `${pct}%`;
+      document.getElementById('summaryStreak').textContent = state.maxStreak;
+      document.getElementById('summaryTempo').textContent = `${Math.round(state.tempoMultiplier * 100)}%`;
+
+      const autoNotice = document.getElementById('autoSpeedNotification');
+      if (state.autoSpeedEnabled && state.tempoMultiplier < 1.5) {
+        const nextTempo = Math.min(1.5, Math.round((state.tempoMultiplier + 0.05) * 100) / 100);
+        setTempo(nextTempo);
+        document.getElementById('nextAcceleratedTempo').textContent = `${Math.round(nextTempo * 100)}%`;
+        autoNotice.classList.remove('hidden');
+      } else {
+        autoNotice.classList.add('hidden');
+      }
+
+      document.getElementById('summaryModal').classList.remove('hidden');
+    }
+
+    function setTempo(newMult) {
+      state.tempoMultiplier = newMult;
+      const pctText = `${Math.round(state.tempoMultiplier * 100)}%`;
+      document.getElementById('tempoDisplay').textContent = pctText;
+      const mobileDisp = document.getElementById('mobileTempoDisplay');
+      if (mobileDisp) mobileDisp.textContent = pctText;
+      prepareSongTimeline();
+    }
+
+    function flashMetronomePulse() {
+      const pulseEl = document.getElementById('metronomePulse');
+      if (!pulseEl) return;
+      pulseEl.classList.add('bg-amber-400', 'scale-125', 'shadow-lg', 'shadow-amber-400/60');
+      setTimeout(() => {
+        pulseEl.classList.remove('bg-amber-400', 'scale-125', 'shadow-lg', 'shadow-amber-400/60');
+      }, 100);
     }
 
     function showAccuracyToast(text) {
@@ -1582,24 +1902,93 @@
       setTimeout(() => toast.classList.add('hidden'), 2500);
     }
 
-    function flashMetronomePulse() {
-      const pulse = document.getElementById('metronomePulse');
-      pulse.classList.add('bg-violet-500', 'scale-125');
-      setTimeout(() => pulse.classList.remove('bg-violet-500', 'scale-125'), 80);
-    }
+    // Изменение темпа (+ / -) для ПК и мобильных
+    document.getElementById('btnTempoInc').addEventListener('click', () => {
+      if (state.tempoMultiplier < 1.5) {
+        setTempo(Math.min(1.5, Math.round((state.tempoMultiplier + 0.1) * 10) / 10));
+      }
+    });
+    document.getElementById('btnTempoDec').addEventListener('click', () => {
+      if (state.tempoMultiplier > 0.3) {
+        setTempo(Math.max(0.3, Math.round((state.tempoMultiplier - 0.1) * 10) / 10));
+      }
+    });
+    document.getElementById('btnMobileTempoInc').addEventListener('click', () => {
+      if (state.tempoMultiplier < 1.5) {
+        setTempo(Math.min(1.5, Math.round((state.tempoMultiplier + 0.1) * 10) / 10));
+      }
+    });
+    document.getElementById('btnMobileTempoDec').addEventListener('click', () => {
+      if (state.tempoMultiplier > 0.3) {
+        setTempo(Math.max(0.3, Math.round((state.tempoMultiplier - 0.1) * 10) / 10));
+      }
+    });
+
+    // Смена тембра инструмента (Рояль / Электропиано / Клавесин)
+    document.getElementById('btnToggleTimbre').addEventListener('click', () => {
+      const timbreText = document.getElementById('timbreText');
+      if (audio.timbre === 'grand') {
+        audio.timbre = 'epiano';
+        timbreText.textContent = 'Электро';
+        showAccuracyToast('Тембр: Электропиано 🎹');
+      } else if (audio.timbre === 'epiano') {
+        audio.timbre = 'harpsichord';
+        timbreText.textContent = 'Клавесин';
+        showAccuracyToast('Тембр: Клавесин ✨');
+      } else {
+        audio.timbre = 'grand';
+        timbreText.textContent = 'Рояль';
+        showAccuracyToast('Тембр: Концертный рояль 🎼');
+      }
+    });
+
+    // Умный повтор (Loop) и Авто-разгон темпа
+    const btnLoopToggle = document.getElementById('btnLoopToggle');
+    btnLoopToggle.addEventListener('click', () => {
+      state.loopEnabled = !state.loopEnabled;
+      document.getElementById('loopStatusText').textContent = state.loopEnabled ? 'Повтор: Вкл' : 'Повтор: Выкл';
+      btnLoopToggle.className = state.loopEnabled
+        ? 'px-2 py-0.5 rounded-lg bg-violet-600 text-white text-[11px] font-semibold flex items-center gap-1 transition shadow-sm'
+        : 'px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium flex items-center gap-1 transition';
+    });
+
+    const btnAutoSpeedToggle = document.getElementById('btnAutoSpeedToggle');
+    btnAutoSpeedToggle.addEventListener('click', () => {
+      state.autoSpeedEnabled = !state.autoSpeedEnabled;
+      btnAutoSpeedToggle.className = state.autoSpeedEnabled
+        ? 'px-2 py-0.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-semibold flex items-center gap-1 transition'
+        : 'px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium flex items-center gap-1 transition';
+      if (state.autoSpeedEnabled) {
+        showAccuracyToast('Авто-разгон (+5% за круг) включен ⚡');
+      }
+    });
+
+    // Кнопки модального окна результатов
+    document.getElementById('btnSummaryReplay').addEventListener('click', () => {
+      document.getElementById('summaryModal').classList.add('hidden');
+      resetSongProgress();
+      if (state.mode === 'listen' || state.mode === 'flow') {
+        startPlayback();
+      }
+    });
+    document.getElementById('btnSummaryLibrary').addEventListener('click', () => {
+      document.getElementById('summaryModal').classList.add('hidden');
+      openSongModal();
+    });
 
     /* =====================================================================
-       9. МОДАЛЬНОЕ ОКНО БИБЛИОТЕКИ ПЕСЕН И ПОИСК
+       9. МОДАЛЬНОЕ ОКНО БИБЛИОТЕКИ 21 ПРОИЗВЕДЕНИЯ
        ===================================================================== */
     const songModal = document.getElementById('songModal');
     const songsListContainer = document.getElementById('songsListContainer');
 
     function openSongModal() {
-      songModal.classList.remove('hidden');
-      setTimeout(() => {
-        songModal.classList.remove('opacity-0');
-      }, 10);
+      pausePlayback();
       renderSongCards(SONGS_DB);
+      songModal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        songModal.classList.remove('opacity-0');
+      });
     }
 
     function closeSongModal() {
@@ -1609,49 +1998,50 @@
       }, 200);
     }
 
-    function renderSongCards(songs) {
+    function renderSongCards(songsArray) {
       songsListContainer.innerHTML = '';
-      songs.forEach(s => {
-        const originalIndex = SONGS_DB.findIndex(item => item.id === s.id);
-        const isCurrent = originalIndex === state.currentSongIndex;
+      if (songsArray.length === 0) {
+        songsListContainer.innerHTML = '<div class="text-center text-slate-500 py-8">Произведения не найдены</div>';
+        return;
+      }
+
+      songsArray.forEach((song) => {
+        const realIndex = SONGS_DB.findIndex(s => s.id === song.id);
+        const isCurrent = realIndex === state.currentSongIndex;
+
+        const diffBadgeColor =
+          song.difficulty === 'Easy' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' :
+          song.difficulty === 'Medium' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' :
+          'bg-rose-500/15 text-rose-400 border-rose-500/30';
+
+        const diffTextRu =
+          song.difficulty === 'Easy' ? 'Легкий' :
+          song.difficulty === 'Medium' ? 'Средний' : 'Сложный';
 
         const card = document.createElement('div');
-        card.className = `p-3.5 sm:p-4 rounded-2xl border transition-all duration-150 cursor-pointer flex items-center justify-between gap-3 ${
-          isCurrent 
-            ? 'bg-violet-950/40 border-violet-500/60 ring-1 ring-violet-500/30' 
-            : 'bg-slate-950/60 border-slate-800/80 hover:bg-slate-800/60 hover:border-slate-700'
+        card.className = `p-3.5 sm:p-4 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
+          isCurrent
+            ? 'bg-violet-950/50 border-violet-500/60 shadow-lg shadow-violet-950/40'
+            : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/90'
         }`;
 
-        let diffBadge = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-        let diffText = 'Легкий';
-        if (s.difficulty === 'Medium') {
-          diffBadge = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
-          diffText = 'Средний';
-        } else if (s.difficulty === 'Hard') {
-          diffBadge = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-          diffText = 'Сложный';
-        }
-
         card.innerHTML = `
-          <div class="flex items-center gap-3.5 min-w-0">
-            <div class="w-10 h-10 rounded-xl ${isCurrent ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-400'} flex items-center justify-center font-bold text-sm shrink-0">
-              ${isCurrent ? '<i class="fa-solid fa-play text-xs"></i>' : originalIndex + 1}
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-display font-bold text-sm sm:text-base text-white truncate">${song.title}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${diffBadgeColor}">${diffTextRu}</span>
+              ${isCurrent ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-600 text-white">Активно</span>' : ''}
             </div>
-            <div class="truncate">
-              <h4 class="font-display font-bold text-sm sm:text-base text-white truncate">${s.title}</h4>
-              <p class="text-xs text-slate-400 truncate">${s.composer} • ${s.notes.length} нот</p>
-            </div>
+            <div class="text-xs text-slate-400 font-medium mt-0.5">${song.composer} • <span class="font-mono text-slate-500">${song.defaultBpm} BPM</span></div>
+            <p class="text-[11px] text-slate-500 mt-1 line-clamp-1">${song.description}</p>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border ${diffBadge}">${diffText}</span>
-            <button class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-violet-600 text-slate-300 hover:text-white flex items-center justify-center transition">
-              <i class="fa-solid fa-arrow-right text-xs"></i>
-            </button>
+          <div class="shrink-0 w-9 h-9 rounded-xl bg-slate-800/90 text-violet-400 flex items-center justify-center">
+            <i class="fa-solid fa-play text-xs"></i>
           </div>
         `;
 
         card.addEventListener('click', () => {
-          loadSong(originalIndex);
+          loadSong(realIndex);
           closeSongModal();
         });
 
@@ -1713,23 +2103,6 @@
         state.mode = btn.dataset.mode;
         resetSongProgress();
       });
-    });
-
-    // Изменение темпа (+ / -)
-    const tempoDisplay = document.getElementById('tempoDisplay');
-    document.getElementById('btnTempoInc').addEventListener('click', () => {
-      if (state.tempoMultiplier < 1.5) {
-        state.tempoMultiplier = Math.min(1.5, Math.round((state.tempoMultiplier + 0.1) * 10) / 10);
-        tempoDisplay.textContent = `${Math.round(state.tempoMultiplier * 100)}%`;
-        prepareSongTimeline();
-      }
-    });
-    document.getElementById('btnTempoDec').addEventListener('click', () => {
-      if (state.tempoMultiplier > 0.3) {
-        state.tempoMultiplier = Math.max(0.3, Math.round((state.tempoMultiplier - 0.1) * 10) / 10);
-        tempoDisplay.textContent = `${Math.round(state.tempoMultiplier * 100)}%`;
-        prepareSongTimeline();
-      }
     });
 
     // Метроном
